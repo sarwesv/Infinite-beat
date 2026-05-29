@@ -196,49 +196,80 @@ function startLegoVisualizer() {
 }
 
 /**
- * Lava Lamp - Realistic Multi-Blob System with STRICT CENTERING
+ * Lava Lamp - Realistic Multi-Blob System with Blue Spheres
  */
 function initLavaLamp() {
-    const blobCount = 8;
+    const blobCount = 10; // More blobs for a richer look
     for (let i = 0; i < blobCount; i++) {
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        const radius = 25 + Math.random() * 45;
+        const radius = 20 + Math.random() * 40;
+        
         circle.setAttribute("r", radius);
-        circle.setAttribute("cx", 100);
-        circle.setAttribute("cy", 450);
-        const colors = ["#ff0080", "#ff00ff", "#d400ff", "#ff4d94"];
-        circle.setAttribute("fill", colors[Math.floor(Math.random() * colors.length)]);
-        circle.setAttribute("opacity", "0.9");
+        circle.setAttribute("cx", 40 + Math.random() * 120);
+        circle.setAttribute("cy", 450); // Start below
+        
+        // Use the new 3D sphere gradient
+        circle.setAttribute("fill", "url(#sphere-gradient)");
+        circle.setAttribute("opacity", "0.95");
         blobContainer.appendChild(circle);
-        blobs.push({ el: circle, r: radius, x: 40 + Math.random() * 120, y: 100 + Math.random() * 400, speed: 0.4 + Math.random() * 1.2, offset: Math.random() * Math.PI * 2 });
+        
+        const blobData = {
+            el: circle,
+            r: radius,
+            x: 40 + Math.random() * 120,
+            y: 450,
+            speed: 0.3 + Math.random() * 0.8,
+            offset: Math.random() * Math.PI * 2
+        };
+        blobs.push(blobData);
+
+        // --- LIQUID MOTION WITH ANIME.JS ---
+        // Each blob gets its own vertical float animation
+        const animateSingleBlob = () => {
+            const duration = 8000 + Math.random() * 12000; // Slow, heavy liquid
+            anime({
+                targets: blobData,
+                y: [-100, 500],
+                direction: 'reverse',
+                loop: true,
+                duration: duration,
+                easing: 'easeInOutQuad',
+                update: () => {
+                    if (currentViz !== 'lava') return;
+                    
+                    // Add subtle horizontal drift
+                    const drift = Math.sin(Date.now() / 2000 + blobData.offset) * 15;
+                    blobData.el.setAttribute("cy", blobData.y);
+                    blobData.el.setAttribute("cx", blobData.x + drift);
+                }
+            });
+        };
+        animateSingleBlob();
     }
 
-    function animateBlobs() {
-        requestAnimationFrame(animateBlobs);
+    // Handle Bass Reactivity and Scaling
+    function pulse() {
+        requestAnimationFrame(pulse);
         if (currentViz !== 'lava' || !isPlaying) return;
 
         const fftData = analyser.getValue();
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        // Centered via CSS, scale strictly to viewport
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 500;
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 450;
         lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
 
+        // Scale individual blobs slightly on bass
         blobs.forEach((blob) => {
-            blob.y -= blob.speed * (0.5 + intensity * 1.5);
-            const drift = Math.sin(Date.now() / 1500 + blob.offset) * 15;
-            if (blob.y < -100) { blob.y = 480; blob.x = 40 + Math.random() * 120; }
-            blob.el.setAttribute("cx", blob.x + drift);
-            blob.el.setAttribute("cy", blob.y);
-            const dynamicRadius = blob.r * (1 + intensity * 0.25);
+            const dynamicRadius = blob.r * (1 + intensity * 0.2);
             blob.el.setAttribute("r", dynamicRadius);
         });
 
-        const glow = 30 + intensity * 70;
-        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.5))`;
+        // Deep blue/cyan glow
+        const glow = 20 + intensity * 60;
+        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(59, 130, 246, 0.5))`;
     }
-    animateBlobs();
+    pulse();
 }
 
 /**
