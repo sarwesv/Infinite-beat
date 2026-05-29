@@ -93,7 +93,7 @@ async function initAudio() {
             envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 },
             filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 150, octaves: 2.5 }
         }).connect(bassDist);
-        bass.volume.value = -6;
+        bass.volume.value = +4; // Significant volume boost
 
         keys = new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: "sine" },
@@ -217,21 +217,24 @@ startStopBtn.addEventListener('click', async () => {
     if (!initialized) {
         startStopBtn.innerText = "Loading...";
         await initAudio();
+        startStopBtn.innerText = "Start Music";
     }
 
     if (isPlaying) {
-        // Ramp down volume to avoid the pop when stopping
+        // Ramp down volume to avoid the pop when pausing
         mainVol.volume.rampTo(-Infinity, 0.1);
         setTimeout(() => {
-            Tone.Transport.stop();
+            Tone.Transport.pause();
             startStopBtn.innerText = "Start Music";
             body.classList.remove('playing');
-        }, 100);
+        }, 120);
     } else {
+        // Ensure transport starts
         Tone.Transport.start();
         // Ramp up volume for a smooth start
+        const targetVol = parseFloat(volumeSlider.value);
         mainVol.volume.value = -Infinity;
-        mainVol.volume.rampTo(volumeSlider.value, 0.2);
+        mainVol.volume.rampTo(targetVol, 0.2);
         startStopBtn.innerText = "Stop Music";
         body.classList.add('playing');
     }
@@ -240,7 +243,8 @@ startStopBtn.addEventListener('click', async () => {
 
 volumeSlider.addEventListener('input', (e) => {
     if (mainVol && isPlaying) {
-        mainVol.volume.value = e.target.value;
+        const val = parseFloat(e.target.value);
+        mainVol.volume.rampTo(val, 0.1);
     }
 });
 
