@@ -177,12 +177,12 @@ function startLegoVisualizer() {
             const target = Math.max(10, rawVal * (h / 300));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            // Radius pushed out to screen edges (min 320px radius)
-            const radius = Math.max(320, Math.min(w, h) * 0.45);
+            // Radius pushed to absolute edges (min 380px)
+            const radius = Math.max(380, Math.min(w, h) * 0.5);
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             
             const x = centerX + Math.cos(brickAngle) * radius;
-            const y = centerY + Math.sin(brickAngle) * (radius * 0.4);
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
             
             let color = "#2563eb";
             if (i < 5) color = "#dc2626";
@@ -221,8 +221,8 @@ function initLavaLamp() {
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        // Centered via CSS, scale based on window
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 450;
+        // Centered via CSS, scale strictly to viewport
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 500;
         lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
 
         blobs.forEach((blob) => {
