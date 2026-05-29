@@ -250,50 +250,32 @@ function setupLoop() {
 
 // UI Handlers
 startStopBtn.addEventListener('click', async () => {
+    // 1. Initial Build if needed
     if (!initialized) {
         startStopBtn.innerText = "Building...";
         await initAudio();
-        startStopBtn.innerText = "Start Music";
     }
 
-    anime({
-        targets: startStopBtn,
-        rotateX: '+=360',
-        translateY: [
-            { value: -100, duration: 400, easing: 'easeOutCubic' },
-            { value: 0, duration: 500, easing: 'easeInCubic' }
-        ],
-        scaleX: [
-            { value: 1, duration: 700 },
-            { value: 1.2, duration: 100, easing: 'easeOutQuad' },
-            { value: 1, duration: 200, easing: 'easeInOutQuad' }
-        ],
-        scaleY: [
-            { value: 1, duration: 700 },
-            { value: 0.8, duration: 100, easing: 'easeOutQuad' },
-            { value: 1, duration: 200, easing: 'easeInOutQuad' }
-        ],
-        update: (anim) => {
-            if (anim.currentTime > 450 && anim.currentTime < 500) {
-                startStopBtn.innerText = isPlaying ? "Start Music" : "Stop Music";
-            }
-        },
-        duration: 1000
-    });
-
+    // 2. Audio Toggling Logic
     if (isPlaying) {
+        // REQUEST TO STOP
         mainVol.volume.rampTo(-Infinity, 0.1);
         setTimeout(() => {
             Tone.Transport.pause();
             body.classList.remove('playing');
         }, 120);
+        startStopBtn.innerText = "Start Music";
     } else {
+        // REQUEST TO START
         Tone.Transport.start();
         const targetVol = parseFloat(volumeSlider.value);
         mainVol.volume.value = -Infinity;
         mainVol.volume.rampTo(targetVol, 0.2);
         body.classList.add('playing');
+        startStopBtn.innerText = "Stop Music";
     }
+    
+    // Toggle state
     isPlaying = !isPlaying;
 });
 
