@@ -45,7 +45,7 @@ body {
     width: 100% !important;
     height: 100% !important;
     display: block;
-    filter: drop-shadow(0 0 15px var(--accent-glow));
+    /* Removed drop-shadow to make LEGO bricks look sharp and solid */
 }
 
 /* --- OVERLAY UI --- */

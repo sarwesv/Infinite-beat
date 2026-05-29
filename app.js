@@ -118,28 +118,59 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop
+ * LEGO Visualizer Main Loop with PERFECT ALIGNMENT
  */
 function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
-        const w = canvas.width = window.innerWidth;
-        const h = canvas.height = window.innerHeight;
+        
+        // Sync resolution with window and device pixel ratio for sharpness
+        const dpr = window.devicePixelRatio || 1;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        
+        if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        
         ctx.clearRect(0, 0, w, h);
         if (!isPlaying) return;
-        rotationAngle += 0.008;
+
+        rotationAngle += 0.007; // Slightly slower, more stable
         const fftData = analyser.getValue();
-        const centerX = w / 2; const centerY = h / 2;
+        
+        // MATHEMATICAL SCREEN CENTER
+        const centerX = w / 2;
+        const centerY = h / 2;
+
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
-            const rawVal = (fftData[i] + 100); const target = Math.max(10, rawVal * (h / 300)); barHeights[i] += (target - barHeights[i]) * 0.15;
-            const radius = Math.max(380, Math.min(w, h) * 0.5); const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            const x = centerX + Math.cos(brickAngle) * radius; const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
-            let color = "#2563eb"; if (i < 5) color = "#dc2626"; if (i > 20) color = "#eab308";
+            const rawVal = (fftData[i] + 100);
+            const target = Math.max(12, rawVal * (h / 350)); 
+            barHeights[i] += (target - barHeights[i]) * 0.12; // Smoother Lerp
+
+            // Wide orbit radius to stay clear of the UI Card
+            const radius = Math.min(w, h) * 0.45;
+            const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            
+            // Circular projection with very slight perspective tilt
+            const x = centerX + Math.cos(brickAngle) * radius;
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
+            
+            let color = "#2563eb"; // Solid Royal Blue
+            if (i < 6) color = "#dc2626"; // Solid Bold Red
+            if (i > 22) color = "#facc15"; // Solid Bright Yellow
+            
             bricks.push({ x, y, h: barHeights[i], color });
         }
+
+        // Painter's algorithm to handle depth correctly
         bricks.sort((a, b) => a.y - b.y);
-        bricks.forEach(b => drawLegoBrick(b.x, b.y, 14, b.h, b.color));
+
+        // Draw each brick as a solid, sharp block
+        bricks.forEach(b => drawLegoBrick(b.x, b.y, 16, b.h, b.color));
     }
     render();
 }
