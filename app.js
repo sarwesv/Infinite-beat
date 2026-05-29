@@ -1,6 +1,6 @@
 /**
  * Infinite Lo-Fi Audio Engine - LEGO 3D Visualizer Edition
- * Uses Tone.js for music and Anime.js for smooth visuals
+ * Uses Tone.js for music and Anime.js logic for smooth visuals
  */
 
 let isPlaying = false;
@@ -19,7 +19,7 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 // Visualizer State
 let barHeights = new Array(32).fill(0);
-let targetHeights = new Array(32).fill(0);
+let rotationAngle = 0;
 
 /**
  * Initialize Audio Engine
@@ -50,7 +50,7 @@ async function initAudio() {
         vinyl.connect(mainVol);
         vinyl.start();
 
-        // --- INSTRUMENTS ---
+        // --- DRUMS ---
         kick = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.4, sustain: 0.01 }}).connect(mainVol);
         kick.volume.value = -2;
 
@@ -85,49 +85,55 @@ async function initAudio() {
 }
 
 /**
- * 3D Isometric LEGO Cube Renderer
+ * 3D Isometric LEGO Cube Renderer with Rotation
  */
-function drawLegoBrick(x, y, size, height, color) {
+function drawLegoBrick(centerX, centerY, size, height, color, angle) {
     const topColor = color;
     const rightColor = shadeColor(color, -20);
     const leftColor = shadeColor(color, -40);
 
-    // Isometric math: project 3D to 2D
-    const isoW = size * 0.8;
-    const isoH = size * 0.4;
-
-    // 1. Right Face
-    ctx.fillStyle = rightColor;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + isoW, y - isoH);
-    ctx.lineTo(x + isoW, y - isoH - height);
-    ctx.lineTo(x, y - height);
-    ctx.closePath();
-    ctx.fill();
-
-    // 2. Left Face
-    ctx.fillStyle = leftColor;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x - isoW, y - isoH);
-    ctx.lineTo(x - isoW, y - isoH - height);
-    ctx.lineTo(x, y - height);
-    ctx.closePath();
-    ctx.fill();
-
-    // 3. Top Face (The "Smooth" part)
-    ctx.fillStyle = topColor;
-    ctx.beginPath();
-    ctx.moveTo(x, y - height);
-    ctx.lineTo(x + isoW, y - isoH - height);
-    ctx.lineTo(x, y - isoH * 2 - height);
-    ctx.lineTo(x - isoW, y - isoH - height);
-    ctx.closePath();
-    ctx.fill();
+    // Rotation math for isometric projection
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
     
-    // Subtle white highlight on the top edge for "plastic" look
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    // Project 3D corners to 2D canvas space (Isometric view)
+    const project = (x, z) => {
+        return {
+            x: centerX + (x * cosA - z * sinA) * (size * 1.5),
+            y: centerY + (x * sinA + z * cosA) * (size * 0.75)
+        };
+    };
+
+    // Define the corners of the brick
+    const b0 = project(-0.8, -0.8);
+    const b1 = project(0.8, -0.8);
+    const b2 = project(0.8, 0.8);
+    const b3 = project(-0.8, 0.8);
+    
+    const t0 = { x: b0.x, y: b0.y - height };
+    const t1 = { x: b1.x, y: b1.y - height };
+    const t2 = { x: b2.x, y: b2.y - height };
+    const t3 = { x: b3.x, y: b3.y - height };
+
+    // Function to draw faces
+    const drawFace = (p1, p2, p3, p4, col) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+        ctx.fill();
+    };
+
+    // Draw faces in order (simplistic painter's algorithm)
+    drawFace(b0, b1, t1, t0, leftColor);
+    drawFace(b1, b2, t2, t1, rightColor);
+    drawFace(t0, t1, t2, t3, topColor);
+    
+    // Subtle plastic highlight
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
     ctx.lineWidth = 1;
     ctx.stroke();
 }
@@ -147,7 +153,7 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop
+ * LEGO Visualizer Main Loop with Rotation
  */
 function startLegoVisualizer() {
     function render() {
@@ -158,28 +164,28 @@ function startLegoVisualizer() {
 
         if (!isPlaying) return;
 
+        rotationAngle += 0.005; // Very slow, chilled rotation
         const fftData = analyser.getValue();
-        const brickSize = (w / fftData.length) * 0.6;
-        const spacing = w / fftData.length;
+        const centerX = w / 2;
+        const centerY = h / 2 + 40;
 
         for (let i = 0; i < fftData.length; i++) {
-            // Target height based on frequency
-            const rawVal = (fftData[i] + 100); // 0 to 100 approx
-            const target = Math.max(10, rawVal * (h / 120));
-            
-            // Anime.js style smoothing (Lerp)
+            const rawVal = (fftData[i] + 100);
+            const target = Math.max(10, rawVal * (h / 150));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            const x = (i * spacing) + (spacing / 2);
-            const y = h * 0.85; // Baseplate height
+            // Arrange bricks in a circle
+            const radius = Math.min(w, h) * 0.3;
+            const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             
-            // Choose color based on frequency
+            const x = centerX + Math.cos(brickAngle) * radius;
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.5);
+            
             let color = "#3b82f6"; // Blue
-            if (i < 5) color = "#ef4444"; // Bass = Red bricks
-            if (i > 20) color = "#facc15"; // Highs = Yellow bricks
+            if (i < 5) color = "#ef4444"; // Bass = Red
+            if (i > 20) color = "#facc15"; // Highs = Yellow
             
-            // Draw the 3D Lego column
-            drawLegoBrick(x, y, brickSize, barHeights[i], color);
+            drawLegoBrick(x, y, 12, barHeights[i], color, brickAngle);
         }
     }
     render();
