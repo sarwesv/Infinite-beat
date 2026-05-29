@@ -1,18 +1,24 @@
 # 🎧 Infinite Lo-Fi Beats
 
-An infinite, generative music tool designed for focus, study, and relaxation. No loops, no samples—just pure algorithmic chilled vibes running directly in your browser.
+A fully immersive, generative music tool designed for deep focus and relaxation. Featuring an algorithmic lo-fi band and dual high-quality 3D visualizers, all running directly in your browser.
 
 ![Infinite Lo-Fi Preview](https://img.shields.io/badge/Status-Live-brightgreen)
-![Tech Stack](https://img.shields.io/badge/Tech-Tone.js%20|%20HTML5%20|%20CSS3-blue)
+![Tech Stack](https://img.shields.io/badge/Tech-Tone.js%20|%20Anime.js%20|%20Glassmorphism-blue)
 
-## ✨ Features
+## ✨ New Features
 
-- **Infinite Generative Engine:** Uses **Tone.js** to synthesize drums, keys, and bass in real-time. It never repeats the same way twice.
-- **Dynamic Chord Progressions:** Automatically cycles through chilled jazzy progressions (ii-V-I, I-vi-ii-V, etc.) every few bars.
-- **Boom Bap Drums:** A classic lo-fi drum pattern with algorithmic swing and variation.
-- **Ambient Textures:** Integrated brown noise and auto-filters to simulate that warm vinyl crackle and tape hiss.
-- **Focus Visualizer:** A breathing, reactive visualizer that pulses in sync with the tempo to help ground your focus.
-- **Responsive & Lightweight:** No heavy audio files to download. The entire "band" is only a few kilobytes of code.
+- **Dual Interactive Visualizers:**
+  - **LEGO 3D Carousel:** A depth-sorted, rotating isometric scene made of smooth-topped bricks that dance to the frequencies.
+  - **Realistic Lava Lamp:** A gooey, multi-blob system inspired by classic retro lamps, featuring fluid morphing and bass-driven reactivity.
+- **Enhanced Generative Band:**
+  - **Plucked Bass Guitar:** A rhythmic, high-visibility bassline with realistic string character.
+  - **Full Percussion:** Standard Boom Bap drums mixed with crisp rimshots and shakers.
+  - **Ambient Textures:** Layered rain, vinyl crackle, and ethereal pads for a complete lo-fi atmosphere.
+- **Modern UI/UX:**
+  - **Glassmorphism Theme:** High-end frosted glass aesthetic with backdrop blurs and white-light borders.
+  - **Immersive Fullscreen:** The music and visuals fill 100% of the screen.
+  - **Responsive Design:** Optimized for everything from mobile phones to ultrawide monitors.
+  - **Smooth Control:** High-interpolation volume slider for glitch-free audio adjustments.
 
 ## 🚀 How to Run Locally
 
@@ -23,26 +29,21 @@ An infinite, generative music tool designed for focus, study, and relaxation. No
    ```
 
 2. **Open the App:**
-   Simply open `index.html` in your favorite web browser.
+   Simply open `index.html` in any modern web browser.
 
 3. **Start the Vibes:**
-   Click the **"Start Music"** button. (Browsers require a user click to enable audio synthesis).
+   Click the **"Start Music"** button and use the switcher to toggle between LEGO and LAVA modes.
 
 ## 🛠️ Built With
 
-- **[Tone.js](https://tonejs.github.io/):** A powerful Web Audio framework for creating interactive music in the browser.
-- **Vanilla JavaScript (ES6+):** For the generative logic and UI orchestration.
-- **CSS3:** For the dark-mode "Midnight" aesthetic and animations.
+- **[Tone.js](https://tonejs.github.io/):** For the generative audio engine and instrument synthesis.
+- **[Anime.js](https://animejs.com/):** For smooth SVG morphing and UI transitions.
+- **HTML5 Canvas:** For the high-performance 3D isometric LEGO rendering.
+- **CSS3:** For the advanced glassmorphism effects and responsive layout.
 
 ## 🌐 Deployment
 
-This project is configured to deploy automatically to **GitHub Pages** via GitHub Actions.
-
 View the live version here: [https://sarwesv.github.io/Infinite-beat/](https://sarwesv.github.io/Infinite-beat/)
-
-## 📜 License
-
-This project is open-source and available under the [MIT License](LICENSE).
 
 ---
 *Made with ❤️ for focus and chill sessions.*
