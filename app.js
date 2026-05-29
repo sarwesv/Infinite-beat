@@ -88,11 +88,11 @@ async function initAudio() {
 
         // --- INSTRUMENTS: CHILL VIBES ---
         bass = new Tone.MonoSynth({
-            oscillator: { type: "triangle" },
-            envelope: { attack: 0.1, decay: 0.3, sustain: 0.8, release: 1 },
-            filterEnvelope: { attack: 0.01, decay: 0.5, sustain: 0.2, baseFrequency: 80, octaves: 2 }
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.15, decay: 0.4, sustain: 0.8, release: 1.5 },
+            filterEnvelope: { attack: 0.02, decay: 0.5, sustain: 0.2, baseFrequency: 60, octaves: 1.5 }
         }).connect(mainVol);
-        bass.volume.value = -8;
+        bass.volume.value = -10;
 
         keys = new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: "sine" },
@@ -159,8 +159,20 @@ function setupLoop() {
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
         pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
 
-        // Play Bass
-        bass.triggerAttackRelease(chordNotes[0].replace(/[34]/, '2'), "2n", time, 0.6);
+        // --- SOFT RHYTHMIC BASS ---
+        const root = chordNotes[0].replace(/[34]/, '2');
+        const fifth = chordNotes[2].replace(/[34]/, '2');
+
+        // Root on beat 1
+        bass.triggerAttackRelease(root, "2n", time, 0.5);
+
+        // Subtle rhythmic hits
+        if (Math.random() > 0.4) {
+            // Beat 3 or "and" of 2
+            const bassOffset = Math.random() > 0.5 ? "2n" : "2n + 8n";
+            const bassNote = Math.random() > 0.7 ? fifth : root;
+            bass.triggerAttackRelease(bassNote, "8n", time + Tone.Time(bassOffset).toSeconds(), 0.3);
+        }
 
         // Generative Lead Melody
         if (Math.random() > 0.4) {
