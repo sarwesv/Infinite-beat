@@ -83,7 +83,9 @@ body {
     animation-name: blob-rise;
     animation-timing-function: ease-in-out;
     fill: var(--lava-color);
-    opacity: 0.9;
+    opacity: 1; /* Force full opacity */
+    will-change: transform; /* Force GPU acceleration for smooth motion */
+    transform: translateZ(0); /* Force 3D context */
 }
 
 .blob--top, .blob--bottom {
