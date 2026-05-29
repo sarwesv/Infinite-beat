@@ -15,7 +15,7 @@ const body = document.body;
 
 // Audio Nodes
 let limiter, mainVol, analyser, reverb, delay;
-let kick, snare, hihat, shaker, bass, keys, pad, lead, rain;
+let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 /**
  * Initialize Audio Engine
@@ -23,11 +23,13 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain;
 async function initAudio() {
     try {
         await Tone.start();
-        console.log("Audio Context Started");
 
         // --- MASTER CHAIN ---
         limiter = new Tone.Limiter(-1).toDestination();
-        mainVol = new Tone.Volume(-12).connect(limiter);
+
+        // Start main volume at -Infinity to avoid the initial pop
+        mainVol = new Tone.Volume(-Infinity).connect(limiter);
+
         analyser = new Tone.Analyser("fft", 128);
         mainVol.connect(analyser);
 
@@ -36,24 +38,29 @@ async function initAudio() {
         delay = new Tone.FeedbackDelay("8n.", 0.3).connect(reverb);
 
         // --- AMBIENCE: RAIN & VINYL ---
-        rain = new Tone.Noise("pink").start();
+        rain = new Tone.Noise("pink");
+        rain.volume.value = -35; // Set volume BEFORE starting
+
         const rainFilter = new Tone.AutoFilter({
             frequency: "4n",
             baseFrequency: 400,
             octaves: 2
         }).connect(mainVol).start();
-        rain.connect(rainFilter);
-        rain.volume.value = -35;
 
-        const vinyl = new Tone.Noise("brown").start();
-        vinyl.volume.value = -40;
+        rain.connect(rainFilter);
+        rain.start();
+
+        vinyl = new Tone.Noise("brown");
+        vinyl.volume.value = -40; // Set volume BEFORE starting
         vinyl.connect(mainVol);
+        vinyl.start();
 
         // --- DRUMS: BOOM BAP ---
         kick = new Tone.MembraneSynth({
             pitchDecay: 0.05,
             octaves: 2,
-            oscillator: { type: "sine" }
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.005, decay: 0.4, sustain: 0.01 }
         }).connect(mainVol);
         kick.volume.value = -2;
 
@@ -65,7 +72,7 @@ async function initAudio() {
 
         hihat = new Tone.MetalSynth({
             frequency: 200,
-            envelope: { attack: 0.001, decay: 0.1, release: 0.05 },
+            envelope: { attack: 0.005, decay: 0.1, release: 0.05 },
             harmonicity: 5.1,
             modulationIndex: 32,
             resonance: 4000,
@@ -147,11 +154,11 @@ function setupLoop() {
         }
 
         const chordNotes = chords[currentChordIndex];
-        
+
         // Play Chords & Pad
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
         pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
-        
+
         // Play Bass
         bass.triggerAttackRelease(chordNotes[0].replace(/[34]/, '2'), "2n", time, 0.6);
 
@@ -200,11 +207,18 @@ startStopBtn.addEventListener('click', async () => {
     }
 
     if (isPlaying) {
-        Tone.Transport.stop();
-        startStopBtn.innerText = "Start Music";
-        body.classList.remove('playing');
+        // Ramp down volume to avoid the pop when stopping
+        mainVol.volume.rampTo(-Infinity, 0.1);
+        setTimeout(() => {
+            Tone.Transport.stop();
+            startStopBtn.innerText = "Start Music";
+            body.classList.remove('playing');
+        }, 100);
     } else {
         Tone.Transport.start();
+        // Ramp up volume for a smooth start
+        mainVol.volume.value = -Infinity;
+        mainVol.volume.rampTo(volumeSlider.value, 0.2);
         startStopBtn.innerText = "Stop Music";
         body.classList.add('playing');
     }
@@ -212,5 +226,8 @@ startStopBtn.addEventListener('click', async () => {
 });
 
 volumeSlider.addEventListener('input', (e) => {
-    if (mainVol) mainVol.volume.value = e.target.value;
+    if (mainVol && isPlaying) {
+        mainVol.volume.value = e.target.value;
+    }
 });
+
