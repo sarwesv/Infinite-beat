@@ -4,12 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infinite Lo-Fi Beats</title>
-    <!-- Version: 1.0.1 - Frosted Glass & Enhanced Audio -->
+    <!-- Version: 1.0.2 - Fixed Fullscreen Layout -->
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 </head>
 <body>
+    <!-- BACKGROUND LAYER -->
+    <div class="visualizer-container">
+        <canvas id="visualizer-canvas"></canvas>
+        <svg id="lava-lamp" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid slice" style="display: none;">
+            <defs>
+                <filter id="gooey-ultra">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 35 -15" result="goo" />
+                </filter>
+            </defs>
+            <g id="blob-container" filter="url(#gooey-ultra)"></g>
+        </svg>
+    </div>
+
+    <!-- UI LAYER -->
     <div id="app">
         <header>
             <h1>Infinite Lo-Fi</h1>
@@ -20,19 +35,6 @@
             <div class="viz-switcher">
                 <button id="show-lego" class="btn-mini active">LEGO</button>
                 <button id="show-lava" class="btn-mini">LAVA</button>
-            </div>
-
-            <div class="visualizer-container">
-                <canvas id="visualizer-canvas"></canvas>
-                <svg id="lava-lamp" viewBox="0 0 200 400" preserveAspectRatio="xMidYMid slice" style="display: none;">
-                    <defs>
-                        <filter id="gooey-ultra">
-                            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
-                            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 35 -15" result="goo" />
-                        </filter>
-                    </defs>
-                    <g id="blob-container" filter="url(#gooey-ultra)"></g>
-                </svg>
             </div>
 
             <div class="controls">
