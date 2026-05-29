@@ -1,5 +1,5 @@
 /**
- * Infinite Lo-Fi Audio Engine - LEGO 3D Visualizer Edition
+ * Infinite Lo-Fi Audio Engine - Multi-Viz Edition
  * Uses Tone.js for music and Anime.js logic for smooth visuals
  */
 
@@ -10,6 +10,10 @@ let initialized = false;
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
 const canvas = document.getElementById('visualizer-canvas');
+const lavaLamp = document.getElementById('lava-lamp');
+const blobPath = document.getElementById('blob-path');
+const btnLego = document.getElementById('show-lego');
+const btnLava = document.getElementById('show-lava');
 const ctx = canvas.getContext('2d');
 const body = document.body;
 
@@ -20,6 +24,15 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 // Visualizer State
 let barHeights = new Array(32).fill(0);
 let rotationAngle = 0;
+let currentViz = 'lego'; // 'lego' or 'lava'
+
+// Lava Lamp Blob Shapes (SVG Path Data)
+const blobShapes = [
+    "M100,20 C140,20 180,60 180,100 C180,140 140,180 100,180 C60,180 20,140 20,100 C20,60 60,20 100,20",
+    "M100,20 C160,20 190,70 190,110 C190,150 150,190 100,190 C50,190 10,150 10,110 C10,70 40,20 100,20",
+    "M100,30 C130,30 170,50 170,90 C170,130 140,170 100,170 C60,170 30,130 30,90 C30,50 70,30 100,30",
+    "M100,20 C150,20 180,50 180,100 C180,150 150,180 100,180 C50,180 20,150 20,100 C20,50 50,20 100,20"
+];
 
 /**
  * Initialize Audio Engine
@@ -31,7 +44,6 @@ async function initAudio() {
         limiter = new Tone.Limiter(-1).toDestination();
         mainVol = new Tone.Volume(-Infinity).connect(limiter);
         
-        // FFT size for 32 bars
         analyser = new Tone.Analyser("fft", 32);
         mainVol.connect(analyser);
 
@@ -78,6 +90,7 @@ async function initAudio() {
 
         setupLoop();
         startLegoVisualizer();
+        initLavaLamp();
         initialized = true;
     } catch (e) {
         console.error("Initialization failed", e);
@@ -85,18 +98,16 @@ async function initAudio() {
 }
 
 /**
- * 3D Isometric LEGO Cube Renderer (Fixed View)
+ * 3D Isometric LEGO Cube Renderer
  */
 function drawLegoBrick(centerX, centerY, size, height, color) {
     const topColor = color;
     const rightColor = shadeColor(color, -25);
     const leftColor = shadeColor(color, -45);
 
-    // Standard 30-degree Isometric Projection
     const isoW = size * 0.9;
     const isoH = size * 0.45;
 
-    // Faces Corners
     const pCenter = { x: centerX, y: centerY };
     const pRight = { x: centerX + isoW, y: centerY - isoH };
     const pTop = { x: centerX, y: centerY - isoH * 2 };
@@ -113,32 +124,10 @@ function drawLegoBrick(centerX, centerY, size, height, color) {
         ctx.fill();
     };
 
-    // Draw order for standard view: Left, Right, then Top
-    // 1. Left Face
-    drawFace([
-        pCenter,
-        pLeft,
-        { x: pLeft.x, y: pLeft.y - height },
-        { x: pCenter.x, y: pCenter.y - height }
-    ], leftColor);
+    drawFace([pCenter, pLeft, { x: pLeft.x, y: pLeft.y - height }, { x: pCenter.x, y: pCenter.y - height }], leftColor);
+    drawFace([pCenter, pRight, { x: pRight.x, y: pRight.y - height }, { x: pCenter.x, y: pCenter.y - height }], rightColor);
+    drawFace([{ x: pCenter.x, y: pCenter.y - height }, { x: pRight.x, y: pRight.y - height }, { x: pTop.x, y: pTop.y - height }, { x: pLeft.x, y: pLeft.y - height }], topColor);
 
-    // 2. Right Face
-    drawFace([
-        pCenter,
-        pRight,
-        { x: pRight.x, y: pRight.y - height },
-        { x: pCenter.x, y: pCenter.y - height }
-    ], rightColor);
-
-    // 3. Top Face
-    drawFace([
-        { x: pCenter.x, y: pCenter.y - height },
-        { x: pRight.x, y: pRight.y - height },
-        { x: pTop.x, y: pTop.y - height },
-        { x: pLeft.x, y: pLeft.y - height }
-    ], topColor);
-
-    // Sharper Highlight
     ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -163,7 +152,7 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop with Depth Sorting
+ * LEGO Visualizer Main Loop
  */
 function startLegoVisualizer() {
     function render() {
@@ -172,42 +161,70 @@ function startLegoVisualizer() {
         const h = canvas.height = canvas.offsetHeight;
         ctx.clearRect(0, 0, w, h);
 
-        if (!isPlaying) return;
+        if (!isPlaying || currentViz !== 'lego') return;
 
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
         const centerX = w / 2;
-        const centerY = h * 0.75; // Moved baseplate LOWER to prevent tall bricks clipping
+        const centerY = h * 0.75;
 
-        // Create an array of brick objects so we can sort them
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100);
-            const target = Math.max(10, rawVal * (h / 200)); // Scaled down height multiplier
+            const target = Math.max(10, rawVal * (h / 200));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
             const radius = Math.min(w, h) * 0.35;
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            
             const x = centerX + Math.cos(brickAngle) * radius;
             const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
-            
-            let color = "#2563eb"; // Blue
-            if (i < 5) color = "#dc2626"; // Red (Bass)
-            if (i > 20) color = "#eab308"; // Yellow (Highs)
-            
+            let color = "#2563eb";
+            if (i < 5) color = "#dc2626";
+            if (i > 20) color = "#eab308";
             bricks.push({ x, y, h: barHeights[i], color });
         }
-
-        // --- PAINTER'S ALGORITHM (Depth Sorting) ---
-        // Sort by 'y' coordinate so the bricks furthest away are drawn FIRST
         bricks.sort((a, b) => a.y - b.y);
-
-        bricks.forEach(b => {
-            drawLegoBrick(b.x, b.y, 14, b.h, b.color);
-        });
+        bricks.forEach(b => drawLegoBrick(b.x, b.y, 14, b.h, b.color));
     }
     render();
+}
+
+/**
+ * Lava Lamp Initialization & Animation
+ */
+function initLavaLamp() {
+    let shapeIndex = 0;
+
+    function morph() {
+        if (currentViz === 'lava' && isPlaying) {
+            shapeIndex = (shapeIndex + 1) % blobShapes.length;
+            anime({
+                targets: blobPath,
+                d: [ { value: blobShapes[shapeIndex] } ],
+                duration: 4000,
+                easing: 'easeInOutQuint',
+                complete: morph
+            });
+        } else {
+            setTimeout(morph, 1000);
+        }
+    }
+    morph();
+
+    function pulse() {
+        requestAnimationFrame(pulse);
+        if (currentViz !== 'lava' || !isPlaying) return;
+
+        const fftData = analyser.getValue();
+        const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
+        const scale = 1 + (bassLevel + 100) / 250;
+        lavaLamp.style.transform = `scale(${scale})`;
+        
+        const hue = (Date.now() / 100) % 360;
+        const glow = Math.max(20, (bassLevel + 100) / 1.5);
+        blobPath.style.filter = `drop-shadow(0 0 ${glow}px hsla(${hue}, 70%, 50%, 0.6))`;
+    }
+    pulse();
 }
 
 /**
@@ -219,21 +236,12 @@ function setupLoop() {
         if (hit === "S") snare.triggerAttackRelease("16n", time);
         if (hit === "H") hihat.triggerAttackRelease("32n", time, 0.5);
         if (hit === "h") shaker.triggerAttackRelease("32n", time, 0.2);
-    }, [
-        "K", "h", "H", "h", "S", "h", "K", "h",
-        "K", "h", "H", "h", "S", "h", null, "h"
-    ], "8n").start(0);
+    }, [ "K", "h", "H", "h", "S", "h", "K", "h", "K", "h", "H", "h", "S", "h", null, "h" ], "8n").start(0);
 
-    const chords = [
-        ["C4", "E4", "G4", "B4"], ["A3", "C4", "E4", "G4"], ["F3", "A3", "C4", "E4"],
-        ["G3", "B3", "D4", "F4"], ["D4", "F4", "A4", "C5"], ["E3", "G3", "B3", "D4"]
-    ];
-
+    const chords = [ ["C4", "E4", "G4", "B4"], ["A3", "C4", "E4", "G4"], ["F3", "A3", "C4", "E4"], ["G3", "B3", "D4", "F4"], ["D4", "F4", "A4", "C5"], ["E3", "G3", "B3", "D4"] ];
     let currentChordIndex = 0;
     const musicLoop = new Tone.Loop((time) => {
-        if (Tone.Transport.position.split(":")[1] === "0" && Math.random() > 0.5) {
-            currentChordIndex = Math.floor(Math.random() * chords.length);
-        }
+        if (Tone.Transport.position.split(":")[1] === "0" && Math.random() > 0.5) { currentChordIndex = Math.floor(Math.random() * chords.length); }
         const chordNotes = chords[currentChordIndex];
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
         pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
@@ -243,30 +251,37 @@ function setupLoop() {
             lead.triggerAttackRelease(melodyNote, "2n", time + Tone.Time("4n").toSeconds(), 0.3);
         }
     }, "1n").start(0);
-
     Tone.Transport.bpm.value = 80;
     Tone.Transport.swing = 0.3;
 }
 
 // UI Handlers
+btnLego.addEventListener('click', () => {
+    currentViz = 'lego';
+    canvas.style.display = 'block';
+    lavaLamp.style.display = 'none';
+    btnLego.classList.add('active');
+    btnLava.classList.remove('active');
+});
+
+btnLava.addEventListener('click', () => {
+    currentViz = 'lava';
+    canvas.style.display = 'none';
+    lavaLamp.style.display = 'block';
+    btnLava.classList.add('active');
+    btnLego.classList.remove('active');
+});
+
 startStopBtn.addEventListener('click', async () => {
-    // 1. Initial Build if needed
     if (!initialized) {
         startStopBtn.innerText = "Building...";
         await initAudio();
     }
-
-    // 2. Audio Toggling Logic
     if (isPlaying) {
-        // REQUEST TO STOP
         mainVol.volume.rampTo(-Infinity, 0.1);
-        setTimeout(() => {
-            Tone.Transport.pause();
-            body.classList.remove('playing');
-        }, 120);
+        setTimeout(() => { Tone.Transport.pause(); body.classList.remove('playing'); }, 120);
         startStopBtn.innerText = "Start Music";
     } else {
-        // REQUEST TO START
         Tone.Transport.start();
         const targetVol = parseFloat(volumeSlider.value);
         mainVol.volume.value = -Infinity;
@@ -274,13 +289,9 @@ startStopBtn.addEventListener('click', async () => {
         body.classList.add('playing');
         startStopBtn.innerText = "Stop Music";
     }
-    
-    // Toggle state
     isPlaying = !isPlaying;
 });
 
 volumeSlider.addEventListener('input', (e) => {
-    if (mainVol) {
-        mainVol.volume.rampTo(parseFloat(e.target.value), 0.05);
-    }
+    if (mainVol) mainVol.volume.rampTo(parseFloat(e.target.value), 0.05);
 });

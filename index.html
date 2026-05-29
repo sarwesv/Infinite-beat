@@ -17,8 +17,26 @@
         </header>
 
         <main>
+            <div class="viz-switcher">
+                <button id="show-lego" class="btn-mini active">LEGO</button>
+                <button id="show-lava" class="btn-mini">LAVA</button>
+            </div>
+
             <div class="visualizer-container">
                 <canvas id="visualizer-canvas"></canvas>
+                <svg id="lava-lamp" viewBox="0 0 200 200" style="display: none;">
+                    <defs>
+                        <linearGradient id="blob-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#3b82f6" />
+                            <stop offset="100%" stop-color="#9333ea" />
+                        </linearGradient>
+                        <filter id="gooey">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+                        </filter>
+                    </defs>
+                    <path id="blob-path" d="M100,20 C140,20 180,60 180,100 C180,140 140,180 100,180 C60,180 20,140 20,100 C20,60 60,20 100,20" fill="url(#blob-gradient)" filter="url(#gooey)" />
+                </svg>
             </div>
 
             <div class="controls">
