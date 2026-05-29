@@ -87,12 +87,13 @@ async function initAudio() {
         shaker.volume.value = -30;
 
         // --- INSTRUMENTS: CHILL VIBES ---
+        const bassDist = new Tone.Distortion(0.1).connect(mainVol);
         bass = new Tone.MonoSynth({
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.15, decay: 0.4, sustain: 0.8, release: 1.5 },
-            filterEnvelope: { attack: 0.02, decay: 0.5, sustain: 0.2, baseFrequency: 60, octaves: 1.5 }
-        }).connect(mainVol);
-        bass.volume.value = -10;
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 },
+            filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 150, octaves: 2.5 }
+        }).connect(bassDist);
+        bass.volume.value = -6;
 
         keys = new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: "sine" },
