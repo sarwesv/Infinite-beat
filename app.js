@@ -89,8 +89,8 @@ async function initAudio() {
  */
 function drawLegoBrick(centerX, centerY, size, height, color, angle) {
     const topColor = color;
-    const rightColor = shadeColor(color, -20);
-    const leftColor = shadeColor(color, -40);
+    const rightColor = shadeColor(color, -25); // Increased contrast
+    const leftColor = shadeColor(color, -50);  // Increased contrast
 
     // Rotation math for isometric projection
     const cosA = Math.cos(angle);
@@ -132,9 +132,9 @@ function drawLegoBrick(centerX, centerY, size, height, color, angle) {
     drawFace(b1, b2, t2, t1, rightColor);
     drawFace(t0, t1, t2, t3, topColor);
     
-    // Subtle plastic highlight
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 1;
+    // Sharper, more visible plastic highlight for "solidity"
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 }
 
@@ -175,17 +175,18 @@ function startLegoVisualizer() {
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
             // Arrange bricks in a circle
-            const radius = Math.min(w, h) * 0.3;
+            const radius = Math.min(w, h) * 0.35; // Slightly larger radius
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             
             const x = centerX + Math.cos(brickAngle) * radius;
             const y = centerY + Math.sin(brickAngle) * (radius * 0.5);
             
-            let color = "#3b82f6"; // Blue
-            if (i < 5) color = "#ef4444"; // Bass = Red
-            if (i > 20) color = "#facc15"; // Highs = Yellow
+            // Solid, vibrant LEGO colors
+            let color = "#2563eb"; // Royal Blue
+            if (i < 5) color = "#dc2626"; // Bold Red
+            if (i > 20) color = "#eab308"; // Bold Yellow
             
-            drawLegoBrick(x, y, 12, barHeights[i], color, brickAngle);
+            drawLegoBrick(x, y, 14, barHeights[i], color, brickAngle);
         }
     }
     render();
