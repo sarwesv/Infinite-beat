@@ -29,6 +29,31 @@ body {
     position: relative;
 }
 
+/* --- STAGGER BACKGROUND --- */
+.stagger-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2; /* Behind the LEGO visualizer */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    gap: 40px;
+    padding: 20px;
+    opacity: 0.4;
+}
+
+.stagger-dot {
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
 /* --- FULLSCREEN VISUALIZER --- */
 .visualizer-container {
     position: fixed;

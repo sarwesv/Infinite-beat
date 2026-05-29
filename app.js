@@ -1,5 +1,5 @@
 /**
- * Infinite Lo-Fi Audio Engine - LEGO Visualizer Edition
+ * Infinite Lo-Fi Audio Engine - Staggered Background Edition
  * Optimized for Mobile/iPad Performance
  */
 
@@ -10,6 +10,7 @@ let initialized = false;
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
 const canvas = document.getElementById('visualizer-canvas');
+const staggerBg = document.getElementById('stagger-bg');
 const ctx = canvas.getContext('2d');
 const body = document.body;
 
@@ -27,6 +28,7 @@ let rotationAngle = 0;
 async function initAudio() {
     try {
         await Tone.start();
+        createStaggerGrid();
         
         limiter = new Tone.Limiter(-1).toDestination();
         compressor = new Tone.Compressor({
@@ -88,6 +90,40 @@ async function initAudio() {
 }
 
 /**
+ * Create a grid of dots for the stagger effect
+ */
+function createStaggerGrid() {
+    const columns = Math.ceil(window.innerWidth / 80);
+    const rows = Math.ceil(window.innerHeight / 80);
+    const totalDots = columns * rows;
+    
+    staggerBg.innerHTML = '';
+    for (let i = 0; i < totalDots; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'stagger-dot';
+        staggerBg.appendChild(dot);
+    }
+}
+
+/**
+ * Trigger staggered background ripple
+ */
+function triggerStaggerRipple() {
+    if (!initialized) return;
+    const columns = Math.ceil(window.innerWidth / 80);
+    const rows = Math.ceil(window.innerHeight / 80);
+    
+    anime({
+        targets: '.stagger-dot',
+        scale: [1, 2.5, 1],
+        opacity: [0.4, 1, 0.4],
+        delay: anime.stagger(60, { grid: [columns, rows], from: 'center' }),
+        duration: 800,
+        easing: 'easeOutSine'
+    });
+}
+
+/**
  * 3D Isometric LEGO Cube Renderer
  */
 function drawLegoBrick(centerX, centerY, size, height, color) {
@@ -123,53 +159,26 @@ function shadeColor(color, percent) {
 function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
-        
-        // Sync resolution with window and device pixel ratio for sharpness
         const dpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
-        
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.scale(dpr, dpr);
+            canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
         }
-        
         ctx.clearRect(0, 0, w, h);
         if (!isPlaying) return;
-
-        rotationAngle += 0.007; // Slightly slower, more stable
+        rotationAngle += 0.007;
         const fftData = analyser.getValue();
-        
-        // MATHEMATICAL SCREEN CENTER
-        const centerX = w / 2;
-        const centerY = h / 2;
-
+        const centerX = w / 2; const centerY = h / 2;
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
-            const rawVal = (fftData[i] + 100);
-            const target = Math.max(12, rawVal * (h / 350)); 
-            barHeights[i] += (target - barHeights[i]) * 0.12; // Smoother Lerp
-
-            // Wide orbit radius to stay clear of the UI Card
-            const radius = Math.min(w, h) * 0.45;
-            const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            
-            // Circular projection with very slight perspective tilt
-            const x = centerX + Math.cos(brickAngle) * radius;
-            const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
-            
-            let color = "#2563eb"; // Solid Royal Blue
-            if (i < 6) color = "#dc2626"; // Solid Bold Red
-            if (i > 22) color = "#facc15"; // Solid Bright Yellow
-            
+            const rawVal = (fftData[i] + 100); const target = Math.max(12, rawVal * (h / 350)); barHeights[i] += (target - barHeights[i]) * 0.12;
+            const radius = Math.min(w, h) * 0.45; const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            const x = centerX + Math.cos(brickAngle) * radius; const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
+            let color = "#2563eb"; if (i < 6) color = "#dc2626"; if (i > 22) color = "#facc15";
             bricks.push({ x, y, h: barHeights[i], color });
         }
-
-        // Painter's algorithm to handle depth correctly
         bricks.sort((a, b) => a.y - b.y);
-
-        // Draw each brick as a solid, sharp block
         bricks.forEach(b => drawLegoBrick(b.x, b.y, 16, b.h, b.color));
     }
     render();
@@ -180,7 +189,10 @@ function startLegoVisualizer() {
  */
 function setupLoop() {
     const drumSeq = new Tone.Sequence((time, hit) => {
-        if (hit === "K") kick.triggerAttackRelease("C1", "8n", time);
+        if (hit === "K") {
+            kick.triggerAttackRelease("C1", "8n", time);
+            Tone.Draw.schedule(() => triggerStaggerRipple(), time);
+        }
         if (hit === "S") snare.triggerAttackRelease("16n", time);
         if (hit === "H") hihat.triggerAttackRelease("32n", time, 0.5);
         if (hit === "h") shaker.triggerAttackRelease("32n", time, 0.2);
@@ -226,4 +238,8 @@ startStopBtn.addEventListener('click', async () => {
 
 volumeSlider.addEventListener('input', (e) => {
     if (mainVol) mainVol.volume.rampTo(parseFloat(e.target.value), 0.05);
+});
+
+window.addEventListener('resize', () => {
+    if (initialized) createStaggerGrid();
 });
