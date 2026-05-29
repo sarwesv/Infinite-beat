@@ -1,5 +1,5 @@
 /**
- * Infinite Lo-Fi Audio Engine - Multi-Viz Edition
+ * Infinite Lo-Fi Audio Engine - Multi-Viz Edition (Realistic Lava)
  * Uses Tone.js for music and Anime.js logic for smooth visuals
  */
 
@@ -11,7 +11,7 @@ const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
 const canvas = document.getElementById('visualizer-canvas');
 const lavaLamp = document.getElementById('lava-lamp');
-const blobPath = document.getElementById('blob-path');
+const blobContainer = document.getElementById('blob-container');
 const btnLego = document.getElementById('show-lego');
 const btnLava = document.getElementById('show-lava');
 const ctx = canvas.getContext('2d');
@@ -24,15 +24,8 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 // Visualizer State
 let barHeights = new Array(32).fill(0);
 let rotationAngle = 0;
-let currentViz = 'lego'; // 'lego' or 'lava'
-
-// Lava Lamp Blob Shapes (SVG Path Data)
-const blobShapes = [
-    "M100,20 C140,20 180,60 180,100 C180,140 140,180 100,180 C60,180 20,140 20,100 C20,60 60,20 100,20",
-    "M100,20 C160,20 190,70 190,110 C190,150 150,190 100,190 C50,190 10,150 10,110 C10,70 40,20 100,20",
-    "M100,30 C130,30 170,50 170,90 C170,130 140,170 100,170 C60,170 30,130 30,90 C30,50 70,30 100,30",
-    "M100,20 C150,20 180,50 180,100 C180,150 150,180 100,180 C50,180 20,150 20,100 C20,50 50,20 100,20"
-];
+let currentViz = 'lego';
+let blobs = [];
 
 /**
  * Initialize Audio Engine
@@ -152,12 +145,11 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop with Depth Sorting
+ * LEGO Visualizer Main Loop
  */
 function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
-        // Sync canvas size to window for full screen
         const w = canvas.width = window.innerWidth;
         const h = canvas.height = window.innerHeight;
         ctx.clearRect(0, 0, w, h);
@@ -167,18 +159,16 @@ function startLegoVisualizer() {
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
         const centerX = w / 2;
-        const centerY = h / 2 + 100; // Centered baseplate in the full window
+        const centerY = h / 2 + 100;
 
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100);
-            const target = Math.max(10, rawVal * (h / 250)); // Scale for full height
+            const target = Math.max(10, rawVal * (h / 250));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            // Responsive radius
             const radius = Math.min(w, h) * 0.4;
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            
             const x = centerX + Math.cos(brickAngle) * radius;
             const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
             let color = "#2563eb";
@@ -187,50 +177,54 @@ function startLegoVisualizer() {
             bricks.push({ x, y, h: barHeights[i], color });
         }
         bricks.sort((a, b) => a.y - b.y);
-        bricks.forEach(b => drawLegoBrick(b.x, b.y, 18, b.h, b.color)); // Slightly larger bricks
+        bricks.forEach(b => drawLegoBrick(b.x, b.y, 18, b.h, b.color));
     }
     render();
 }
 
 /**
- * Lava Lamp Initialization & Animation
+ * Lava Lamp - Realistic Multi-Blob System
  */
 function initLavaLamp() {
-    let shapeIndex = 0;
-
-    function morph() {
-        if (currentViz === 'lava' && isPlaying) {
-            shapeIndex = (shapeIndex + 1) % blobShapes.length;
-            anime({
-                targets: blobPath,
-                d: [ { value: blobShapes[shapeIndex] } ],
-                duration: 4000,
-                easing: 'easeInOutQuint',
-                complete: morph
-            });
-        } else {
-            setTimeout(morph, 1000);
-        }
+    const blobCount = 8;
+    for (let i = 0; i < blobCount; i++) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const radius = 25 + Math.random() * 45;
+        circle.setAttribute("r", radius);
+        circle.setAttribute("cx", 50 + Math.random() * 100);
+        circle.setAttribute("cy", 450);
+        const colors = ["#ff0080", "#ff00ff", "#d400ff", "#ff4d94"];
+        circle.setAttribute("fill", colors[Math.floor(Math.random() * colors.length)]);
+        circle.setAttribute("opacity", "0.9");
+        blobContainer.appendChild(circle);
+        blobs.push({ el: circle, r: radius, x: 50 + Math.random() * 100, y: 100 + Math.random() * 400, speed: 0.4 + Math.random() * 1.2, offset: Math.random() * Math.PI * 2 });
     }
-    morph();
 
-    function pulse() {
-        requestAnimationFrame(pulse);
+    function animateBlobs() {
+        requestAnimationFrame(animateBlobs);
         if (currentViz !== 'lava' || !isPlaying) return;
 
         const fftData = analyser.getValue();
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
-        
-        // Responsive scaling for the blob
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 300;
-        const scale = baseScale * (1 + (bassLevel + 100) / 300);
-        lavaLamp.style.transform = `scale(${scale})`;
-        
-        const hue = (Date.now() / 100) % 360;
-        const glow = Math.max(20, (bassLevel + 100) / 1.5);
-        blobPath.style.filter = `drop-shadow(0 0 ${glow}px hsla(${hue}, 70%, 50%, 0.6))`;
+        const intensity = (bassLevel + 100) / 100;
+
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 350;
+        lavaLamp.style.transform = `scale(${baseScale})`;
+
+        blobs.forEach((blob) => {
+            blob.y -= blob.speed * (0.5 + intensity * 1.5);
+            const drift = Math.sin(Date.now() / 1500 + blob.offset) * 15;
+            if (blob.y < -100) { blob.y = 480; blob.x = 40 + Math.random() * 120; }
+            blob.el.setAttribute("cx", blob.x + drift);
+            blob.el.setAttribute("cy", blob.y);
+            const dynamicRadius = blob.r * (1 + intensity * 0.25);
+            blob.el.setAttribute("r", dynamicRadius);
+        });
+
+        const glow = 30 + intensity * 70;
+        lavaLamp.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.5))`;
     }
-    pulse();
+    animateBlobs();
 }
 
 /**
@@ -251,7 +245,17 @@ function setupLoop() {
         const chordNotes = chords[currentChordIndex];
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
         pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
-        bass.triggerAttackRelease(chordNotes[0].replace(/[34]/, '2'), "2n", time, 0.6);
+        
+        // --- SOFT RHYTHMIC BASS ---
+        const root = chordNotes[0].replace(/[34]/, '2');
+        const fifth = chordNotes[2].replace(/[34]/, '2');
+        bass.triggerAttackRelease(root, "2n", time, 0.5);
+        if (Math.random() > 0.4) {
+            const bassOffset = Math.random() > 0.5 ? "2n" : "2n + 8n";
+            const bassNote = Math.random() > 0.7 ? fifth : root;
+            bass.triggerAttackRelease(bassNote, "8n", time + Tone.Time(bassOffset).toSeconds(), 0.3);
+        }
+
         if (Math.random() > 0.4) {
             const melodyNote = chordNotes[Math.floor(Math.random() * chordNotes.length)].replace(/[34]/, '5');
             lead.triggerAttackRelease(melodyNote, "2n", time + Tone.Time("4n").toSeconds(), 0.3);
