@@ -1,5 +1,5 @@
 /**
- * Infinite Lo-Fi Audio Engine - Enhanced Version
+ * Infinite Lo-Fi Audio Engine - Full Band Version
  * Uses Tone.js for generative music synthesis
  */
 
@@ -14,8 +14,8 @@ const body = document.body;
 
 // Instruments & Effects
 let limiter, vol, reverb, vinylNoise;
-let kick, snare, hihat, keys, bass, lead;
-let drumBus, keysBus, leadBus, bassBus;
+let kick, snare, hihat, rim, keys, bass, lead, pad;
+let drumBus, keysBus, leadBus, bassBus, padBus;
 
 /**
  * Initialize the audio engine
@@ -26,77 +26,81 @@ async function initAudio() {
     // Master Chain
     limiter = new Tone.Limiter(-1).toDestination();
     vol = new Tone.Volume(-12).connect(limiter);
-    reverb = new Tone.Reverb({ decay: 5, wet: 0.2 }).connect(vol);
+    
+    // Global Reverb (Rich and Deep)
+    reverb = new Tone.Freeverb({ roomSize: 0.7, dampening: 3000, wet: 0.25 }).connect(vol);
 
-    // Busses
-    drumBus = new Tone.Filter(3000, "lowpass").connect(vol);
-    keysBus = new Tone.Filter(2000, "lowpass").connect(reverb);
-    leadBus = new Tone.Filter(2500, "lowpass").connect(reverb);
-    bassBus = new Tone.Filter(400, "lowpass").connect(vol);
+    // Busses with specific filtering for Lo-Fi warmth
+    drumBus = new Tone.Filter(4000, "lowpass").connect(vol);
+    keysBus = new Tone.Filter(1800, "lowpass").connect(reverb);
+    leadBus = new Tone.Filter(2200, "lowpass").connect(reverb);
+    bassBus = new Tone.Filter(600, "lowpass").connect(vol);
+    padBus = new Tone.Filter(1200, "lowpass").connect(reverb);
 
-    // Ambient Noise
+    // --- AMBIENCE ---
     vinylNoise = new Tone.Noise("brown").start();
     const noiseFilter = new Tone.AutoFilter({
         frequency: "8n",
-        baseFrequency: 300,
-        octaves: 2
+        baseFrequency: 400,
+        octaves: 2.5
     }).connect(vol).start();
     vinylNoise.connect(noiseFilter);
-    vinylNoise.volume.value = -35;
+    vinylNoise.volume.value = -38;
 
-    // --- INSTRUMENTS ---
-
-    // Kick: Deep & Soft
+    // --- DRUMS ---
     kick = new Tone.MembraneSynth({
-        pitchDecay: 0.02,
-        octaves: 6,
+        pitchDecay: 0.05,
+        octaves: 4,
         oscillator: { type: "sine" },
         envelope: { attack: 0.001, decay: 0.4, sustain: 0.01 }
     }).connect(drumBus);
-    kick.volume.value = -2;
     
-    // Snare: White noise with a bit of body
     snare = new Tone.NoiseSynth({
         noise: { type: "white" },
-        envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
+        envelope: { attack: 0.005, decay: 0.2, sustain: 0 }
     }).connect(drumBus);
-    snare.volume.value = -8;
 
-    // Hi-Hat: Crisp and swinging
     hihat = new Tone.MetalSynth({
-        frequency: 200,
-        envelope: { attack: 0.001, decay: 0.1, release: 0.01 },
+        frequency: 250,
+        envelope: { attack: 0.001, decay: 0.1, release: 0.05 },
         harmonicity: 5.1,
         modulationIndex: 32,
         resonance: 4000,
         octaves: 1.5
     }).connect(drumBus);
-    hihat.volume.value = -15;
 
-    // Bass: Warm triangle sub
+    rim = new Tone.MembraneSynth({
+        pitchDecay: 0.001,
+        octaves: 2,
+        oscillator: { type: "square" },
+        envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
+    }).connect(drumBus);
+
+    // --- INSTRUMENTS ---
     bass = new Tone.MonoSynth({
         oscillator: { type: "triangle" },
-        envelope: { attack: 0.05, decay: 0.3, sustain: 0.8, release: 1 },
-        filterEnvelope: { attack: 0.001, decay: 0.7, sustain: 0.1, baseFrequency: 100, octaves: 2 }
+        envelope: { attack: 0.1, decay: 0.3, sustain: 0.8, release: 1 },
+        filterEnvelope: { attack: 0.01, decay: 0.5, sustain: 0.2, baseFrequency: 100, octaves: 2 }
     }).connect(bassBus);
-    bass.volume.value = -4;
+    bass.volume.value = -6;
 
-    // Keys: Wobbly Rhodes style
     keys = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "sine" },
+        oscillator: { type: "triangle" },
         envelope: { attack: 0.2, decay: 0.1, sustain: 1, release: 2 }
     }).connect(keysBus);
-    
-    const vibrato = new Tone.Vibrato(4, 0.15).connect(keysBus);
-    keys.connect(vibrato);
-    keys.volume.value = -10;
+    keys.volume.value = -12;
 
-    // Lead: Soft flute-like melody
+    pad = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "sine" },
+        envelope: { attack: 1.5, decay: 0.5, sustain: 0.8, release: 3 }
+    }).connect(padBus);
+    pad.volume.value = -22;
+
     lead = new Tone.Synth({
         oscillator: { type: "sine" },
-        envelope: { attack: 0.5, decay: 0.2, sustain: 0.5, release: 1.5 }
+        envelope: { attack: 0.8, decay: 0.3, sustain: 0.6, release: 2 }
     }).connect(leadBus);
-    lead.volume.value = -18;
+    lead.volume.value = -20;
 
     setupSequences();
     initialized = true;
@@ -106,66 +110,73 @@ async function initAudio() {
  * Define the music patterns
  */
 function setupSequences() {
-    // 1. Drum Loop (Boom Bap - 16th Note Grid)
-    // K = Kick, S = Snare, h = HiHat soft, H = HiHat hard
+    // 1. Drum Loop (Boom Bap 16th Grid)
     const drumPattern = [
-        "K", "H", "h", null, "S", null, "H", "K",
-        null, "H", "K", "h", "S", null, "H", "h"
+        "K", null, "h", "K", "S", "h", null, "h",
+        "K", "h", "K", null, "S", "h", "R", "h"
     ];
 
     const drumSeq = new Tone.Sequence((time, hit) => {
-        if (hit === "K") kick.triggerAttackRelease("C1", "8n", time);
-        if (hit === "S") snare.triggerAttackRelease("16n", time);
-        if (hit === "H" || hit === "h") {
-            const vel = hit === "H" ? 0.5 : 0.2;
-            hihat.triggerAttackRelease("32n", time, vel);
-        }
+        if (hit === "K") kick.triggerAttackRelease("C1", "8n", time, 0.8);
+        if (hit === "S") snare.triggerAttackRelease("16n", time, 0.6);
+        if (hit === "h") hihat.triggerAttackRelease("32n", time, 0.2);
+        if (hit === "R") rim.triggerAttackRelease("G4", "32n", time, 0.3);
         
-        // Visualizer pulse
-        Tone.Draw.schedule(() => {
-            if (hit === "K") {
-                visualizer.style.transform = "scale(1.3)";
-                setTimeout(() => visualizer.style.transform = "scale(1)", 100);
-            }
-        }, time);
+        // Visualizer pulse on Kick or Snare
+        if (hit === "K" || hit === "S") {
+            Tone.Draw.schedule(() => {
+                visualizer.style.transform = "scale(1.25)";
+                setTimeout(() => visualizer.style.transform = "scale(1)", 120);
+            }, time);
+        }
     }, drumPattern, "16n").start(0);
 
-    // 2. Chords & Lead Logic
+    // 2. Chords, Bass & Melody Logic
     const progressions = [
         ["Cmaj7", "Am7", "Dm7", "G7"],
         ["Fmaj7", "Bbmaj7", "Cmaj7", "C7"],
         ["Dm7", "G7", "Cmaj7", "Am7"],
-        ["Abmaj7", "G7", "Cm7", "C7"]
+        ["Abmaj7", "G7", "Cm7", "C7"],
+        ["Em7", "A7", "Dm7", "G7"]
     ];
 
     let currentProg = progressions[0];
-    
+    let barCount = 0;
+
     const musicLoop = new Tone.Loop((time) => {
-        const bar = Math.floor(Tone.Transport.seconds / (60/Tone.Transport.bpm.value * 4)) % 4;
-        const chord = currentProg[bar];
-        
-        // Progression change logic
-        if (bar === 0 && Math.random() > 0.6) {
+        const barInProg = barCount % 4;
+        const chord = currentProg[barInProg];
+
+        // Change progression every 8 bars
+        if (barInProg === 0 && barCount > 0 && Math.random() > 0.5) {
             currentProg = progressions[Math.floor(Math.random() * progressions.length)];
         }
 
         const notes = getNotesForChord(chord);
         
-        // Play Chords
-        keys.triggerAttackRelease(notes, "1n", time, 0.3);
+        // Play Chords (Keys)
+        keys.triggerAttackRelease(notes, "1n", time, 0.4);
         
-        // Play Bass
-        bass.triggerAttackRelease(notes[0].replace('4', '2'), "2n", time, 0.5);
+        // Play Ambient Pad
+        pad.triggerAttackRelease(notes, "1n", time, 0.2);
+        
+        // Play Bass (Root Note)
+        bass.triggerAttackRelease(notes[0].replace('4', '2').replace('3', '2'), "1n", time, 0.7);
         
         // Generative Lead Melody
-        if (Math.random() > 0.3) {
-            const leadNote = notes[Math.floor(Math.random() * notes.length)].replace('3', '5').replace('4', '5');
-            lead.triggerAttackRelease(leadNote, "2n", time + Tone.Time("4n").toSeconds(), 0.3);
+        if (Math.random() > 0.4) {
+            const melodyNotes = [...notes];
+            const leadNote = melodyNotes[Math.floor(Math.random() * melodyNotes.length)].replace(/[34]/, '5');
+            // Play melody on the 2nd or 3rd beat
+            const offset = Math.random() > 0.5 ? "2n" : "4n";
+            lead.triggerAttackRelease(leadNote, "2n", time + Tone.Time(offset).toSeconds(), 0.3);
         }
+
+        barCount++;
     }, "1n").start(0);
 
-    Tone.Transport.bpm.value = 84;
-    Tone.Transport.swing = 0.3; // Give it that Lo-Fi bounce
+    Tone.Transport.bpm.value = 82;
+    Tone.Transport.swing = 0.25;
 }
 
 function getNotesForChord(chord) {
@@ -178,7 +189,9 @@ function getNotesForChord(chord) {
         "Bbmaj7": ["Bb3", "D4", "F4", "A4"],
         "C7": ["C4", "E4", "G4", "Bb4"],
         "Abmaj7": ["Ab3", "C4", "Eb4", "G4"],
-        "Cm7": ["C4", "Eb4", "G4", "Bb4"]
+        "Cm7": ["C4", "Eb4", "G4", "Bb4"],
+        "Em7": ["E3", "G3", "B3", "D4"],
+        "A7": ["A3", "C#4", "E4", "G4"]
     };
     return map[chord] || map["Cmaj7"];
 }
@@ -190,7 +203,7 @@ startStopBtn.addEventListener('click', async () => {
     }
 
     if (isPlaying) {
-        Tone.Transport.pause();
+        Tone.Transport.stop();
         startStopBtn.innerText = "Start Music";
         body.classList.remove('playing');
     } else {
@@ -204,4 +217,3 @@ startStopBtn.addEventListener('click', async () => {
 volumeSlider.addEventListener('input', (e) => {
     if (vol) vol.volume.value = e.target.value;
 });
-
