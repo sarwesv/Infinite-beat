@@ -242,9 +242,10 @@ startStopBtn.addEventListener('click', async () => {
 });
 
 volumeSlider.addEventListener('input', (e) => {
-    if (mainVol && isPlaying) {
+    if (mainVol) {
         const val = parseFloat(e.target.value);
-        mainVol.volume.rampTo(val, 0.1);
+        // A very short ramp (0.05s) is perfect for smoothing out slider "zipper" noise
+        mainVol.volume.rampTo(val, 0.05);
     }
 });
 
