@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <title>Lofi Lamp | Interactive SVG Lava Lamp</title>
+  <meta name="description" content="An interactive lava lamp visualization with customizable colors, controls, and lofi music. Perfect for relaxation and focus.">
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-chrome-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="favicon/android-chrome-512x512.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+
+  <meta property="og:title" content="Lofi Lamp | Interactive SVG Lava Lamp">
+  <meta property="og:description" content="An interactive lava lamp visualization with customizable colors, controls, and lofi music. Perfect for relaxation and focus.">
+  <meta property="og:image" content="https://i.ibb.co/QvbQwbvW/zscsc.jpg">
+  <meta property="og:url" content="https://drbaph.is-a.dev/LofiLamp/">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lofi Lamp | Interactive SVG Lava Lamp">
+  <meta name="twitter:description" content="An interactive SVG lava lamp visualization with customizable colors, controls, and lofi music.">
+  <meta name="twitter:image" content="https://i.ibb.co/QvbQwbvW/zscsc.jpg">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #4bff91;
+      --primary-hover: #2ecc71;
+      --bg-dark: #0a0b0f;
+      --bg-panel: rgba(16, 18, 27, 0.8);
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color 1.5s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .scene {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+      padding: 20px;
+    }
+
+    /* Starry background */
+    #stars-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 2s ease;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      animation: twinkle 3s infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+
+    /* Lava Lamp Styles */
+    .lava-lamp {
+      height: 500px;
+      width: 180px;
+      position: relative;
+      transform: scale(1);
+      transform-origin: center center;
+      transition: all 0.8s var(--transition-smooth);
+      filter: drop-shadow(0 20px 40px rgba(80, 255, 120, 0.2));
+    }
+
+    .lava-lamp__main {
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+      background: linear-gradient(180deg, #000 0%, #0a0f0a 100%);
+    }
+
+    .lava-lamp__main:after,
+    .lava-lamp__main:before {
+      background: linear-gradient(180deg, #000 0%, #0f1a0f 100%);
+      content: '';
+      height: 12%;
+      left: 0;
+      position: absolute;
+      width: 100%;
+    }
+
+    .lava-lamp__main:after {
+      top: 0;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+
+    .lava-lamp__main:before {
+      bottom: 0;
+      height: 26%;
+      border-radius: 0 0 50% 50% / 0 0 35% 35%;
+    }
+
+    .lava-lamp__glass {
+      background: radial-gradient(ellipse at 50% 60%, 
+        rgba(0, 40, 20, 0.95) 0%, 
+        rgba(20, 80, 40, 0.8) 25%, 
+        rgba(40, 150, 70, 0.6) 50%, 
+        rgba(60, 200, 100, 0.4) 75%, 
+        rgba(80, 255, 120, 0.15) 100%);
+      border-radius: 50% / 10%;
+      overflow: hidden;
+      height: 70%;
+      left: 0;
+      position: absolute;
+      top: 10%;
+      width: 100%;
+      z-index: 2;
+      animation: glass-shimmer 8s ease-in-out infinite;
+      box-shadow: inset 0 0 30px rgba(80, 255, 120, 0.2);
+    }
+
+    @keyframes glass-shimmer {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      50% { filter: brightness(1.05) saturate(1.1); }
+    }
+
+    .lava-lamp__glass:before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 20%;
+      width: 20%;
+      height: 60%;
+      background: linear-gradient(180deg, rgba(160, 255, 180, 0.3) 0%, rgba(160, 255, 180, 0.1) 50%, transparent 100%);
+      border-radius: 50%;
+      filter: blur(10px);
+    }
+
+    .lava-lamp__glass:after {
+      content: '';
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      height: 30%;
+      background: radial-gradient(ellipse at center, rgba(80, 255, 120, 0.2) 0%, transparent 70%);
+      filter: blur(20px);
+    }
+
+    .lava-lamp__base {
+      height: 20%;
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      overflow: hidden;
+      border-radius: 0 0 50% 50% / 0 0 35% 35%;
+    }
+
+    .lava-lamp__base:before {
+      content: '';
+      background: linear-gradient(180deg, #000 0%, #0a0f0a 100%);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      position: absolute;
+      top: -60%;
+      height: 500px;
+      width: 180px;
+    }
+
+    .lava-lamp__lava {
+      border-radius: 50% / 10%;
+      height: 100%;
+      overflow: hidden;
+      position: absolute;
+      width: 100%;
+      filter: url('#goo');
+    }
+
+    .lava-lamp__svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .blob {
+      animation-delay: calc(var(--delay) * 1s);
+      animation-direction: var(--direction);
+      animation-duration: calc(var(--speed) * 1s);
+      animation-iteration-count: infinite;
+      animation-name: blob-rise;
+      animation-timing-function: ease-in-out;
+      fill: #4bff91;
+      opacity: 0.9;
+    }
+
+    .blob--top,
+    .blob--bottom {
+      animation: blob-sway 20s infinite ease-in-out;
+    }
+
+    @keyframes blob-rise {
+      0% { transform: translateY(110%) scale(1); }
+      50% { transform: translateY(-50%) scale(1.1); }
+      100% { transform: translateY(-110%) scale(1); }
+    }
+
+    @keyframes blob-sway {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(20px); }
+      75% { transform: translateX(-20px); }
+    }
+
+    /* Control Panel */
+    .controls-panel {
+      position: fixed;
+      top: 50%;
+      left: -400px;
+      transform: translateY(-50%);
+      width: 400px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 0 24px 24px 0;
+      padding: 30px;
+      z-index: 110;
+      transition: left 0.5s var(--transition-smooth);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      color: var(--text-primary);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .controls-panel.active {
+      left: 0;
+    }
+
+    .controls-tab {
+      position: fixed;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 0 16px 16px 0;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 111;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls-panel.active ~ .controls-tab {
+      left: 400px;
+    }
+
+    .controls-tab:hover {
+      background: var(--primary-color);
+      padding-right: 20px;
+    }
+
+    .controls-tab svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--text-primary);
+      transition: transform 0.3s ease;
+    }
+
+    .controls-tab::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+      border-radius: 0 16px 16px 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+
+    .controls-tab:hover::before {
+      opacity: 0.3;
+    }
+
+    @keyframes tab-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(108, 99, 255, 0); }
+    }
+
+    .controls-tab {
+      animation: tab-pulse 2s infinite;
+    }
+
+    .controls-panel.active ~ .controls-tab svg {
+      transform: rotate(180deg);
+    }
+
+    .controls-tab::after {
+      content: 'Controls';
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 8px;
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+    }
+
+    .controls-tab:hover::after {
+      opacity: 1;
+      transform: translateY(-50%) translateX(4px);
+    }
+
+    .controls-panel.active + .controls-tab::after {
+      display: none;
+    }
+
+    .control-group {
+      margin-bottom: 32px;
+    }
+
+    .control-group h3 {
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Color Picker Grid */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .color-button {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      overflow: hidden;
+    }
+
+    .color-button:hover {
+      transform: scale(1.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .color-button.active {
+      border-color: var(--text-primary);
+      box-shadow: 0 0 20px currentColor;
+    }
+
+    .color-button.active::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    #red-btn { background: linear-gradient(135deg, #ff4b4b, #ff6b6b); }
+    #green-btn { background: linear-gradient(135deg, #4bff91, #2ecc71); }
+    #blue-btn { background: linear-gradient(135deg, #4b9fff, #3498db); }
+    #purple-btn { background: linear-gradient(135deg, #a64bff, #9b59b6); }
+    #orange-btn { background: linear-gradient(135deg, #ffb84b, #f39c12); }
+    #pink-btn { background: linear-gradient(135deg, #ff4b9f, #e91e63); }
+    #cyan-btn { background: linear-gradient(135deg, #4bfff0, #00bcd4); }
+    #custom-btn { 
+      background: conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+      position: relative;
+    }
+
+    /* Buttons */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .modern-button {
+      flex: 1;
+      padding: 12px 20px;
+      background: var(--glass-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .modern-button:hover {
+      background: var(--glass-border);
+      transform: translateY(-2px);
+    }
+
+    .modern-button.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 16px rgba(75, 255, 145, 0.4);
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      transition: all 0.4s ease;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 3px;
+      background-color: var(--text-secondary);
+      transition: all 0.4s ease;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+      background-color: white;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    /* Fullscreen Button */
+    .fullscreen-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 24px;
+      box-shadow: 0 4px 16px rgba(75, 255, 145, 0.3);
+    }
+
+    .fullscreen-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(75, 255, 145, 0.4);
+    }
+
+    /* Audio Player */
+    .audio-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 24px;
+    }
+
+    .play-button {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(75, 255, 145, 0.3);
+      flex-shrink: 0;
+    }
+
+    .play-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px rgba(75, 255, 145, 0.4);
+    }
+
+    .play-button svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    .audio-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 150px;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #ff4444;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+    }
+
+    .audio-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .progress-container {
+      flex: 1;
+      position: relative;
+      height: 6px;
+      background: var(--glass-bg);
+      border-radius: 3px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: var(--primary-color);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .volume-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .volume-icon {
+      width: 24px;
+      height: 24px;
+      fill: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .volume-icon:hover {
+      fill: var(--primary-color);
+    }
+
+    /* GitHub Link */
+    .github-link {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      width: 48px;
+      height: 48px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      z-index: 100;
+    }
+
+    .github-link:hover {
+      transform: scale(1.1);
+      background: var(--glass-bg);
+    }
+
+    .github-link svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--text-primary);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .controls-panel {
+        width: 320px;
+        left: -320px;
+        padding: 20px;
+        max-height: 100vh;
+        top: 0;
+        transform: none;
+        height: 100vh;
+        border-radius: 0 16px 16px 0;
+      }
+
+      .controls-panel.active { left: 0; }
+      .controls-tab {
+        left: 0;
+        top: 80px;
+        transform: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 0 12px 12px 0;
+      }
+
+      .controls-panel.active + .controls-tab { left: 320px; }
+      .lava-lamp { height: 400px; width: 140px; }
+      .audio-player { height: 60px; padding: 0 16px; }
+      .play-button { width: 40px; height: 40px; }
+      .color-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    }
+
+    @media (max-width: 480px) {
+      .controls-panel { width: 100%; left: -100%; border-radius: 0; padding: 16px; }
+      .controls-panel.active { left: 0; }
+      .controls-tab {
+        left: 0;
+        width: 40px;
+        height: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-radius: 0 8px 8px 0;
+        padding: 8px;
+      }
+      .controls-panel.active + .controls-tab { display: none; }
+      .lava-lamp { height: 350px; width: 120px; }
+      .progress-container { display: none; }
+      .audio-player { justify-content: center; gap: 16px; }
+      .control-group h3 { font-size: 12px; }
+      .modern-button { padding: 10px 12px; font-size: 12px; }
+      .fullscreen-btn { padding: 12px; font-size: 14px; }
+    }
+
+    .controls-panel::-webkit-scrollbar { width: 6px; }
+    .controls-panel::-webkit-scrollbar-track { background: var(--glass-bg); border-radius: 3px; }
+    .controls-panel::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 3px; }
+    .controls-panel::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+
+    #custom-color { position: absolute; opacity: 0; pointer-events: none; }
+    #custom-btn.active #custom-color { pointer-events: all; }
+  </style>
+</head>
+<body>
+  <div id="stars-container"></div>
+
+  <a href="https://github.com/Saganaki22/LofiLamp" class="github-link" target="_blank" rel="noopener noreferrer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.82 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+  </a>
+
+  <div class="scene">
+    <div class="lava-lamp" id="lava-lamp">
+      <div class="lava-lamp__main">
+        <div class="lava-lamp__glass" id="lamp-glass">
+          <div class="lava-lamp__lava">
+            <svg class="lava-lamp__svg" viewBox="0 0 180 500" preserveAspectRatio="xMidYMid slice">
+              <ellipse class="blob blob--top" cx="90" cy="40" rx="40" ry="15" fill="#4bff91" opacity="0.9"/>
+              <ellipse class="blob blob--bottom" cx="90" cy="460" rx="80" ry="15" fill="#4bff91" opacity="0.9"/>
+              <circle class="blob" cx="50" cy="500" r="25" fill="#4bff91" style="--speed: 20; --delay: 0; --direction: alternate"/>
+              <circle class="blob" cx="130" cy="500" r="35" fill="#4bff91" style="--speed: 25; --delay: -5; --direction: alternate-reverse"/>
+              <circle class="blob" cx="90" cy="500" r="30" fill="#4bff91" style="--speed: 22; --delay: -10; --direction: alternate"/>
+              <circle class="blob" cx="40" cy="500" r="20" fill="#4bff91" style="--speed: 18; --delay: -3; --direction: alternate-reverse"/>
+              <circle class="blob" cx="140" cy="500" r="28" fill="#4bff91" style="--speed: 30; --delay: -7; --direction: alternate"/>
+              <circle class="blob" cx="70" cy="500" r="32" fill="#4bff91" style="--speed: 28; --delay: -12; --direction: alternate-reverse"/>
+              <circle class="blob" cx="110" cy="500" r="22" fill="#4bff91" style="--speed: 24; --delay: -2; --direction: alternate"/>
+              <circle class="blob" cx="60" cy="500" r="26" fill="#4bff91" style="--speed: 26; --delay: -8; --direction: alternate-reverse"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="lava-lamp__base"></div>
+    </div>
+  </div>
+
+  <svg style="position: absolute; width: 0; height: 0;">
+    <defs>
+      <filter id="goo">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
+        <feBlend in="SourceGraphic" in2="goo"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="controls-panel" id="controls-panel">
+    <div class="control-group">
+      <h3>Lava Color</h3>
+      <div class="color-grid">
+        <div class="color-button" id="red-btn" data-color="#ff4b4b"></div>
+        <div class="color-button active" id="green-btn" data-color="#4bff91"></div>
+        <div class="color-button" id="blue-btn" data-color="#4b9fff"></div>
+        <div class="color-button" id="purple-btn" data-color="#a64bff"></div>
+        <div class="color-button" id="orange-btn" data-color="#ffb84b"></div>
+        <div class="color-button" id="pink-btn" data-color="#ff4b9f"></div>
+        <div class="color-button" id="cyan-btn" data-color="#4bfff0"></div>
+        <div class="color-button" id="custom-btn">
+          <input type="color" id="custom-color" value="#4bff91">
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Display Settings</h3>
+      <div class="button-group">
+        <button class="modern-button" data-scale="0.8">Small</button>
+        <button class="modern-button active" data-scale="1">Medium</button>
+        <button class="modern-button" data-scale="1.2">Large</button>
+      </div>
+
+      <div class="toggle-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="ambient-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">Ambient Lighting</span>
+      </div>
+
+      <div class="toggle-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="stars-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">Starry Background</span>
+      </div>
+    </div>
+
+    <button class="fullscreen-btn" id="fullscreen-btn">
+      Enter Fullscreen
+    </button>
+  </div>
+
+  <div class="controls-tab" id="controls-tab">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </div>
+
+  <div class="audio-player">
+    <div class="play-button" id="play-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </div>
+    
+    <div class="audio-info">
+      <div class="live-dot"></div>
+      <div class="audio-title">Lofi Hip Hop Radio</div>
+    </div>
+    
+    <div class="progress-container" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    
+    <div class="volume-controls">
+      <svg class="volume-icon" id="volume-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+      </svg>
+    </div>
+  </div>
+
+  <audio id="audio-element">
+    <source src="https://fluxfm.streamabc.net/flx-chillhop-mp3-128-8581707" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const lavaLamp = document.getElementById('lava-lamp');
+    const lampGlass = document.getElementById('lamp-glass');
+    const controlsPanel = document.getElementById('controls-panel');
+    const controlsTab = document.getElementById('controls-tab');
+    const audioElement = document.getElementById('audio-element');
+    const playBtn = document.getElementById('play-btn');
+    const volumeIcon = document.getElementById('volume-icon');
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const starsContainer = document.getElementById('stars-container');
+    const starsToggle = document.getElementById('stars-toggle');
+    const ambientToggle = document.getElementById('ambient-toggle');
+
+    let isPlaying = false;
+    audioElement.volume = 0.5;
+
+    // Stars instantiation
+    function createStars() {
+      for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        starsContainer.appendChild(star);
+      }
+    }
+    createStars();
+
+    // Side panel functionality
+    controlsTab.addEventListener('click', () => {
+      controlsPanel.classList.toggle('active');
+      const arrow = controlsTab.querySelector('svg');
+      arrow.style.transform = controlsPanel.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 480) {
+        if (controlsPanel.classList.contains('active') && 
+            !controlsPanel.contains(e.target) && 
+            !controlsTab.contains(e.target)) {
+          controlsPanel.classList.remove('active');
+          controlsTab.querySelector('svg').style.transform = 'rotate(0deg)';
+        }
+      }
+    });
+
+    // Color controls
+    const colorButtons = document.querySelectorAll('.color-button');
+    const customColorPicker = document.getElementById('custom-color');
+    customColorPicker.value = '#4bff91';
+
+    function changeColor(color) {
+      document.querySelectorAll('.blob').forEach(blob => {
+        blob.style.fill = color;
+      });
+    }
+
+    colorButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        colorButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        if (button.id === 'custom-btn') {
+          customColorPicker.click();
+        } else {
+          const color = button.dataset.color;
+          changeColor(color);
+          customColorPicker.value = color;
+        }
+      });
+    });
+
+    customColorPicker.addEventListener('input', (e) => {
+      changeColor(e.target.value);
+      document.getElementById('custom-btn').classList.add('active');
+      colorButtons.forEach(btn => {
+        if (btn.id !== 'custom-btn') btn.classList.remove('active');
+      });
+    });
+
+    // Sizing system
+    const scaleButtons = document.querySelectorAll('.modern-button[data-scale]');
+    scaleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        scaleButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        lavaLamp.style.transform = `scale(${button.dataset.scale})`;
+      });
+    });
+
+    // Ambient Lighting Toggle
+    ambientToggle.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.body.style.background = 'radial-gradient(circle at 50% 50%, rgba(80, 255, 120, 0.03), var(--bg-dark))';
+        lavaLamp.style.filter = 'drop-shadow(0 25px 60px rgba(80, 255, 120, 0.25))';
+      } else {
+        document.body.style.background = 'var(--bg-dark)';
+        lavaLamp.style.filter = 'drop-shadow(0 20px 40px rgba(80, 255, 120, 0.2))';
+      }
+    });
+
+    // Background Twinkle Toggle
+    starsToggle.addEventListener('change', (e) => {
+      starsContainer.style.opacity = e.target.checked ? '1' : '0';
+    });
+
+    // Stream Controls
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        audioElement.pause();
+        playBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      } else {
+        audioElement.play().catch(err => console.error("Error playing audio:", err));
+        playBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+      }
+      isPlaying = !isPlaying;
+    });
+
+    // Visual timeline simulation for livestream tracker
+    let progressAnimation;
+    let startTime = Date.now();
+
+    function updateProgress() {
+      if (!isPlaying) return;
+      const elapsed = (Date.now() - startTime) / 1000;
+      const progress = (elapsed % 300) / 300 * 100;
+      progressFill.style.width = progress + '%';
+      progressAnimation = requestAnimationFrame(updateProgress);
+    }
+
+    audioElement.addEventListener('play', () => {
+      startTime = Date.now();
+      updateProgress();
+    });
+
+    audioElement.addEventListener('pause', () => {
+      cancelAnimationFrame(progressAnimation);
+    });
+
+    progressBar.addEventListener('click', (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      progressFill.style.width = (pos * 100) + '%';
+    });
+
+    // Audio Toggle Mute Button
+    let previousVolume = 0.5;
+    volumeIcon.addEventListener('click', () => {
+      if (audioElement.volume > 0) {
+        previousVolume = audioElement.volume;
+        audioElement.volume = 0;
+        volumeIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+      } else {
+        audioElement.volume = previousVolume;
+        volumeIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+      }
+    });
+
+    // Window Fullscreen Mode
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        fullscreenBtn.textContent = 'Exit Fullscreen';
+      } else {
+        document.exitFullscreen();
+        fullscreenBtn.textContent = 'Enter Fullscreen';
+      }
+    });
+
+    // Safe boundaries validation hook for SVGs
+    function ensureBlobsVisible() {
+      const svg = document.querySelector('.lava-lamp__svg');
+      const blobs = svg.querySelectorAll('.blob:not(.blob--top):not(.blob--bottom)');
+      blobs.forEach(blob => {
+        const cy = parseFloat(blob.getAttribute('cy'));
+        if (cy < -50 || cy > 550) {
+          blob.setAttribute('cy', '500');
+        }
+      });
+    }
+    setInterval(ensureBlobsVisible, 1000);
+
+    setTimeout(() => {
+      starsToggle.checked = true;
+      starsContainer.style.opacity = '1';
+    }, 30000);
+
+    // Responsive scaling window listener
+    window.addEventListener('resize', () => {
+      if (window.innerWidth <= 480) {
+        lavaLamp.style.height = '350px';
+        lavaLamp.style.width = '120px';
+      } else if (window.innerWidth <= 768) {
+        lavaLamp.style.height = '400px';
+        lavaLamp.style.width = '140px';
+      } else {
+        lavaLamp.style.height = '500px';
+        lavaLamp.style.width = '180px';
+      }
+    });
+  </script>
+</body>
+</html>

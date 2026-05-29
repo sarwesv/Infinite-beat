@@ -7,6 +7,9 @@
     --accent-color: #3b82f6;
     --accent-glow: rgba(59, 130, 246, 0.4);
     --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    
+    /* NEW LAVA THEME */
+    --lava-color: #3b82f6; 
 }
 
 * {
@@ -26,7 +29,7 @@ body {
     width: 100vw;
     margin: 0;
     overflow: hidden;
-    position: relative; /* Base for absolute children */
+    position: relative;
 }
 
 /* --- FULLSCREEN VISUALIZER --- */
@@ -36,9 +39,9 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* FORCE TO BACK */
+    z-index: -1;
     pointer-events: none;
-    background: var(--bg-color); /* Add background to avoid bleed */
+    background: var(--bg-color);
 }
 
 #visualizer-canvas {
@@ -48,10 +51,11 @@ body {
     filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
+/* --- NEW LAVA LAMP STYLES --- */
 #lava-lamp {
     height: 90vh !important;
     width: auto !important;
-    aspect-ratio: 1 / 2.2; /* Taller bottle */
+    aspect-ratio: 1 / 2.2;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -61,8 +65,41 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.15);
     box-shadow: 
         inset 0 0 120px rgba(0,0,0,1),
-        0 0 150px rgba(255, 0, 128, 0.15);
+        0 0 150px rgba(59, 130, 246, 0.15);
     overflow: hidden;
+}
+
+.lava-lamp__svg {
+    width: 100%;
+    height: 100%;
+    filter: url(#goo);
+}
+
+.blob {
+    animation-delay: calc(var(--delay) * 1s);
+    animation-direction: var(--direction);
+    animation-duration: calc(var(--speed) * 1s);
+    animation-iteration-count: infinite;
+    animation-name: blob-rise;
+    animation-timing-function: ease-in-out;
+    fill: var(--lava-color);
+    opacity: 0.9;
+}
+
+.blob--top, .blob--bottom {
+    animation: blob-sway 20s infinite ease-in-out;
+}
+
+@keyframes blob-rise {
+    0% { transform: translateY(110%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+    100% { transform: translateY(-110%) scale(1); }
+}
+
+@keyframes blob-sway {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(20px); }
+    75% { transform: translateX(-20px); }
 }
 
 /* --- OVERLAY UI --- */
@@ -71,18 +108,17 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 9999; /* ABSOLUTE TOP */
+    z-index: 9999;
     width: 90%;
-    max-width: 420px; /* Slightly narrower for better focus */
+    max-width: 420px;
     padding: 3.5rem 2.5rem;
     text-align: center;
-    background: rgba(10, 12, 16, 0.85); /* More opaque to hide background overlap */
+    background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(50px) saturate(200%);
     -webkit-backdrop-filter: blur(50px) saturate(200%);
     border-radius: 48px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-        0 30px 60px -12px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9);
     pointer-events: auto;
 }
 
@@ -165,7 +201,6 @@ header p {
     text-transform: uppercase;
 }
 
-/* Glass Slider Styling */
 input[type=range] {
     -webkit-appearance: none;
     width: 100%;
