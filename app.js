@@ -31,7 +31,7 @@ async function initAudio() {
         limiter = new Tone.Limiter(-1).toDestination();
         mainVol = new Tone.Volume(-Infinity).connect(limiter);
         
-        // Lower FFT size for a "blocky" LEGO look (32 bars)
+        // FFT size for 32 bars
         analyser = new Tone.Analyser("fft", 32);
         mainVol.connect(analyser);
 
@@ -85,56 +85,66 @@ async function initAudio() {
 }
 
 /**
- * 3D Isometric LEGO Cube Renderer with Rotation
+ * 3D Isometric LEGO Cube Renderer (Fixed View)
  */
-function drawLegoBrick(centerX, centerY, size, height, color, angle) {
+function drawLegoBrick(centerX, centerY, size, height, color) {
     const topColor = color;
-    const rightColor = shadeColor(color, -25); // Increased contrast
-    const leftColor = shadeColor(color, -50);  // Increased contrast
+    const rightColor = shadeColor(color, -25);
+    const leftColor = shadeColor(color, -45);
 
-    // Rotation math for isometric projection
-    const cosA = Math.cos(angle);
-    const sinA = Math.sin(angle);
-    
-    // Project 3D corners to 2D canvas space (Isometric view)
-    const project = (x, z) => {
-        return {
-            x: centerX + (x * cosA - z * sinA) * (size * 1.5),
-            y: centerY + (x * sinA + z * cosA) * (size * 0.75)
-        };
-    };
+    // Standard 30-degree Isometric Projection
+    const isoW = size * 0.9;
+    const isoH = size * 0.45;
 
-    // Define the corners of the brick
-    const b0 = project(-0.8, -0.8);
-    const b1 = project(0.8, -0.8);
-    const b2 = project(0.8, 0.8);
-    const b3 = project(-0.8, 0.8);
-    
-    const t0 = { x: b0.x, y: b0.y - height };
-    const t1 = { x: b1.x, y: b1.y - height };
-    const t2 = { x: b2.x, y: b2.y - height };
-    const t3 = { x: b3.x, y: b3.y - height };
+    // Faces Corners
+    const pCenter = { x: centerX, y: centerY };
+    const pRight = { x: centerX + isoW, y: centerY - isoH };
+    const pTop = { x: centerX, y: centerY - isoH * 2 };
+    const pLeft = { x: centerX - isoW, y: centerY - isoH };
 
-    // Function to draw faces
-    const drawFace = (p1, p2, p3, p4, col) => {
+    const drawFace = (pts, col) => {
         ctx.fillStyle = col;
         ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p3.x, p3.y);
-        ctx.lineTo(p4.x, p4.y);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        ctx.lineTo(pts[1].x, pts[1].y);
+        ctx.lineTo(pts[2].x, pts[2].y);
+        ctx.lineTo(pts[3].x, pts[3].y);
         ctx.closePath();
         ctx.fill();
     };
 
-    // Draw faces in order (simplistic painter's algorithm)
-    drawFace(b0, b1, t1, t0, leftColor);
-    drawFace(b1, b2, t2, t1, rightColor);
-    drawFace(t0, t1, t2, t3, topColor);
-    
-    // Sharper, more visible plastic highlight for "solidity"
+    // Draw order for standard view: Left, Right, then Top
+    // 1. Left Face
+    drawFace([
+        pCenter,
+        pLeft,
+        { x: pLeft.x, y: pLeft.y - height },
+        { x: pCenter.x, y: pCenter.y - height }
+    ], leftColor);
+
+    // 2. Right Face
+    drawFace([
+        pCenter,
+        pRight,
+        { x: pRight.x, y: pRight.y - height },
+        { x: pCenter.x, y: pCenter.y - height }
+    ], rightColor);
+
+    // 3. Top Face
+    drawFace([
+        { x: pCenter.x, y: pCenter.y - height },
+        { x: pRight.x, y: pRight.y - height },
+        { x: pTop.x, y: pTop.y - height },
+        { x: pLeft.x, y: pLeft.y - height }
+    ], topColor);
+
+    // Sharper Highlight
     ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pLeft.x, pLeft.y - height);
+    ctx.lineTo(pCenter.x, pCenter.y - height);
+    ctx.lineTo(pRight.x, pRight.y - height);
     ctx.stroke();
 }
 
@@ -153,7 +163,7 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop with Rotation
+ * LEGO Visualizer Main Loop with Depth Sorting
  */
 function startLegoVisualizer() {
     function render() {
@@ -164,30 +174,38 @@ function startLegoVisualizer() {
 
         if (!isPlaying) return;
 
-        rotationAngle += 0.005; // Very slow, chilled rotation
+        rotationAngle += 0.008;
         const fftData = analyser.getValue();
         const centerX = w / 2;
-        const centerY = h / 2 + 40;
+        const centerY = h * 0.75; // Moved baseplate LOWER to prevent tall bricks clipping
 
+        // Create an array of brick objects so we can sort them
+        let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100);
-            const target = Math.max(10, rawVal * (h / 150));
+            const target = Math.max(10, rawVal * (h / 200)); // Scaled down height multiplier
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            // Arrange bricks in a circle
-            const radius = Math.min(w, h) * 0.35; // Slightly larger radius
+            const radius = Math.min(w, h) * 0.35;
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             
             const x = centerX + Math.cos(brickAngle) * radius;
-            const y = centerY + Math.sin(brickAngle) * (radius * 0.5);
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
             
-            // Solid, vibrant LEGO colors
-            let color = "#2563eb"; // Royal Blue
-            if (i < 5) color = "#dc2626"; // Bold Red
-            if (i > 20) color = "#eab308"; // Bold Yellow
+            let color = "#2563eb"; // Blue
+            if (i < 5) color = "#dc2626"; // Red (Bass)
+            if (i > 20) color = "#eab308"; // Yellow (Highs)
             
-            drawLegoBrick(x, y, 14, barHeights[i], color, brickAngle);
+            bricks.push({ x, y, h: barHeights[i], color });
         }
+
+        // --- PAINTER'S ALGORITHM (Depth Sorting) ---
+        // Sort by 'y' coordinate so the bricks furthest away are drawn FIRST
+        bricks.sort((a, b) => a.y - b.y);
+
+        bricks.forEach(b => {
+            drawLegoBrick(b.x, b.y, 14, b.h, b.color);
+        });
     }
     render();
 }
@@ -232,33 +250,30 @@ function setupLoop() {
 
 // UI Handlers
 startStopBtn.addEventListener('click', async () => {
-    // 1. Initial Build if needed
     if (!initialized) {
         startStopBtn.innerText = "Building...";
         await initAudio();
         startStopBtn.innerText = "Start Music";
     }
 
-    // 2. Perform the Backflip Animation
     anime({
         targets: startStopBtn,
         rotateX: '+=360',
         translateY: [
-            { value: -100, duration: 400, easing: 'easeOutCubic' }, // Jump
-            { value: 0, duration: 500, easing: 'easeInCubic' }     // Fall
+            { value: -100, duration: 400, easing: 'easeOutCubic' },
+            { value: 0, duration: 500, easing: 'easeInCubic' }
         ],
         scaleX: [
             { value: 1, duration: 700 },
-            { value: 1.2, duration: 100, easing: 'easeOutQuad' }, // Squash on land
+            { value: 1.2, duration: 100, easing: 'easeOutQuad' },
             { value: 1, duration: 200, easing: 'easeInOutQuad' }
         ],
         scaleY: [
             { value: 1, duration: 700 },
-            { value: 0.8, duration: 100, easing: 'easeOutQuad' }, // Stretch on land
+            { value: 0.8, duration: 100, easing: 'easeOutQuad' },
             { value: 1, duration: 200, easing: 'easeInOutQuad' }
         ],
         update: (anim) => {
-            // Change text halfway through the flip (around 450ms)
             if (anim.currentTime > 450 && anim.currentTime < 500) {
                 startStopBtn.innerText = isPlaying ? "Start Music" : "Stop Music";
             }
@@ -266,7 +281,6 @@ startStopBtn.addEventListener('click', async () => {
         duration: 1000
     });
 
-    // 3. Audio Toggling Logic
     if (isPlaying) {
         mainVol.volume.rampTo(-Infinity, 0.1);
         setTimeout(() => {
