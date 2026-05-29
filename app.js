@@ -208,21 +208,29 @@ function initLavaLamp() {
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 350;
-        lavaLamp.style.transform = `scale(${baseScale})`;
+        // REMOVED Redundant baseScale on the whole SVG
+        // lavaLamp.style.transform = `scale(${baseScale})`;
 
         blobs.forEach((blob) => {
-            blob.y -= blob.speed * (0.5 + intensity * 1.5);
+            blob.y -= blob.speed * (0.4 + intensity * 1.2);
             const drift = Math.sin(Date.now() / 1500 + blob.offset) * 15;
-            if (blob.y < -100) { blob.y = 480; blob.x = 40 + Math.random() * 120; }
+            
+            // Stay within the 200-unit width viewBox
+            if (blob.y < -100) { 
+                blob.y = 480; 
+                blob.x = 40 + Math.random() * 120; 
+            }
+            
             blob.el.setAttribute("cx", blob.x + drift);
             blob.el.setAttribute("cy", blob.y);
-            const dynamicRadius = blob.r * (1 + intensity * 0.25);
+            
+            // React radius to bass (subtle)
+            const dynamicRadius = blob.r * (1 + intensity * 0.15);
             blob.el.setAttribute("r", dynamicRadius);
         });
 
-        const glow = 30 + intensity * 70;
-        lavaLamp.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.5))`;
+        const glow = 20 + intensity * 50;
+        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.4))`;
     }
     animateBlobs();
 }
