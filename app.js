@@ -209,9 +209,9 @@ function initLavaLamp() {
         circle.setAttribute("cy", 450);
         
         // Flat shades of blue/cyan
-        const blues = ["#3b82f6", "#0ea5e9", "#2563eb", "#60a5fa"];
+        const blues = ["#1d4ed8", "#0284c7", "#2563eb", "#3b82f6"];
         circle.setAttribute("fill", blues[Math.floor(Math.random() * blues.length)]);
-        circle.setAttribute("opacity", "0.9");
+        circle.setAttribute("opacity", "1.0"); // FULLY OPAQUE
         blobContainer.appendChild(circle);
         
         const blobData = {
@@ -219,17 +219,17 @@ function initLavaLamp() {
             r: radius,
             x: 40 + Math.random() * 120,
             y: 450,
-            speed: 0.2 + Math.random() * 0.5,
+            speed: 0.1 + Math.random() * 0.2, // MUCH SLOWER
             offset: Math.random() * Math.PI * 2
         };
         blobs.push(blobData);
 
         // --- ORGANIC MOTION ---
         const animateSingleBlob = () => {
-            const duration = 12000 + Math.random() * 15000;
+            const duration = 25000 + Math.random() * 20000; // VERY SLOW (25-45 seconds)
             anime({
                 targets: blobData,
-                y: [-120, 520],
+                y: [-150, 550], // Wider vertical range for slower movement
                 direction: 'reverse',
                 loop: true,
                 duration: duration,
@@ -261,12 +261,12 @@ function initLavaLamp() {
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 500;
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 480;
         lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
 
-        // Glow matching the blue blobs
-        const glow = 30 + intensity * 60;
-        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(59, 130, 246, 0.4))`;
+        // Solid, strong glow matching the blue blobs (calmed down)
+        const glow = 15 + intensity * 40;
+        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(37, 99, 235, 0.6))`;
     }
     pulse();
 }
