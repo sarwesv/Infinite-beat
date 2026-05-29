@@ -9,7 +9,6 @@ let initialized = false;
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
-const statusText = document.getElementById('status');
 const visualizer = document.getElementById('visualizer');
 const body = document.body;
 
@@ -163,8 +162,6 @@ function setupSequences() {
             const leadNote = notes[Math.floor(Math.random() * notes.length)].replace('3', '5').replace('4', '5');
             lead.triggerAttackRelease(leadNote, "2n", time + Tone.Time("4n").toSeconds(), 0.3);
         }
-
-        statusText.innerText = `Chilling in ${chord}`;
     }, "1n").start(0);
 
     Tone.Transport.bpm.value = 84;
@@ -189,14 +186,12 @@ function getNotesForChord(chord) {
 // UI Listeners
 startStopBtn.addEventListener('click', async () => {
     if (!initialized) {
-        statusText.innerText = "Tuning instruments...";
         await initAudio();
     }
 
     if (isPlaying) {
         Tone.Transport.pause();
         startStopBtn.innerText = "Start Music";
-        statusText.innerText = "Paused";
         body.classList.remove('playing');
     } else {
         Tone.Transport.start();
