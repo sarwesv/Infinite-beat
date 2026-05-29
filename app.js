@@ -1,6 +1,6 @@
 /**
  * Infinite Lo-Fi Audio Engine - Multi-Viz Edition (Realistic Lava)
- * Uses Tone.js for music and Anime.js logic for smooth visuals
+ * Optimized for Mobile/iPad Performance
  */
 
 let isPlaying = false;
@@ -18,7 +18,7 @@ const ctx = canvas.getContext('2d');
 const body = document.body;
 
 // Audio Nodes
-let limiter, mainVol, analyser, reverb, delay;
+let limiter, compressor, mainVol, analyser, reverb, delay;
 let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 // Visualizer State
@@ -42,24 +42,33 @@ async function initAudio() {
     try {
         await Tone.start();
         
+        // --- MASTER CHAIN (Optimized for small speakers) ---
         limiter = new Tone.Limiter(-1).toDestination();
-        mainVol = new Tone.Volume(-Infinity).connect(limiter);
+        compressor = new Tone.Compressor({
+            threshold: -18,
+            ratio: 3,
+            attack: 0.01,
+            release: 0.1
+        }).connect(limiter);
+        
+        mainVol = new Tone.Volume(-Infinity).connect(compressor);
         
         analyser = new Tone.Analyser("fft", 32);
         mainVol.connect(analyser);
 
-        reverb = new Tone.Reverb({ decay: 6, wet: 0.3 }).connect(mainVol);
-        delay = new Tone.FeedbackDelay("8n.", 0.3).connect(reverb);
+        // Lighter Reverb for Mobile CPU (JCReverb is more efficient than Reverb/Freeverb)
+        reverb = new Tone.JCReverb(0.5).connect(mainVol);
+        delay = new Tone.FeedbackDelay("8n.", 0.2).connect(reverb);
 
         // --- AMBIENCE ---
         rain = new Tone.Noise("pink");
-        rain.volume.value = -35;
-        const rainFilter = new Tone.AutoFilter({ frequency: "4n", baseFrequency: 400, octaves: 2 }).connect(mainVol).start();
+        rain.volume.value = -38;
+        const rainFilter = new Tone.AutoFilter({ frequency: "8n", baseFrequency: 300, octaves: 1.5 }).connect(mainVol).start();
         rain.connect(rainFilter);
         rain.start();
 
         vinyl = new Tone.Noise("brown");
-        vinyl.volume.value = -40;
+        vinyl.volume.value = -45;
         vinyl.connect(mainVol);
         vinyl.start();
 
@@ -67,27 +76,36 @@ async function initAudio() {
         kick = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.4, sustain: 0.01 }}).connect(mainVol);
         kick.volume.value = -2;
 
-        snare = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0 }}).connect(mainVol);
-        snare.volume.value = -10;
+        snare = new Tone.NoiseSynth({ envelope: { attack: 0.005, decay: 0.1, sustain: 0 }}).connect(mainVol);
+        snare.volume.value = -12;
 
-        hihat = new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.005, decay: 0.1, release: 0.05 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).connect(mainVol);
-        hihat.volume.value = -25;
+        hihat = new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.005, decay: 0.1, release: 0.05 }, harmonicity: 3, modulationIndex: 16, resonance: 2000, octaves: 1 }).connect(mainVol);
+        hihat.volume.value = -28;
 
-        shaker = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.01, decay: 0.05, sustain: 0 }}).connect(mainVol);
-        shaker.volume.value = -30;
+        shaker = new Tone.NoiseSynth({ envelope: { attack: 0.01, decay: 0.05, sustain: 0 }}).connect(mainVol);
+        shaker.volume.value = -32;
 
-        const bassDist = new Tone.Distortion(0.1).connect(mainVol);
-        bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 150, octaves: 2.5 }}).connect(bassDist);
+        const bassDist = new Tone.Distortion(0.05).connect(mainVol);
+        bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 120, octaves: 2 }}).connect(bassDist);
         bass.volume.value = +4;
 
-        keys = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.4, release: 1.5 }}).connect(delay);
-        keys.volume.value = -15;
+        // Keys & Pads: Restricted polyphony for mobile performance
+        keys = new Tone.PolySynth(Tone.Synth, { 
+            maxPolyphony: 4,
+            oscillator: { type: "sine" }, 
+            envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1 }
+        }).connect(delay);
+        keys.volume.value = -18;
 
-        pad = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 2, decay: 1, sustain: 0.8, release: 4 }}).connect(reverb);
-        pad.volume.value = -25;
+        pad = new Tone.PolySynth(Tone.Synth, { 
+            maxPolyphony: 4,
+            oscillator: { type: "sine" }, 
+            envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 }
+        }).connect(reverb);
+        pad.volume.value = -28;
 
         lead = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.5, decay: 0.2, sustain: 0.5, release: 2 }}).connect(delay);
-        lead.volume.value = -20;
+        lead.volume.value = -22;
 
         setupLoop();
         startLegoVisualizer();
@@ -167,7 +185,6 @@ function startLegoVisualizer() {
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
         
-        // PERFECT CENTER
         const centerX = w / 2;
         const centerY = h / 2;
 
@@ -177,7 +194,6 @@ function startLegoVisualizer() {
             const target = Math.max(10, rawVal * (h / 300));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            // Radius pushed to absolute edges (min 380px)
             const radius = Math.max(380, Math.min(w, h) * 0.5);
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             
@@ -196,22 +212,21 @@ function startLegoVisualizer() {
 }
 
 /**
- * Lava Lamp - Flat Organic Blob System
+ * Lava Lamp - Realistic Multi-Blob System with STRICT CENTERING
  */
 function initLavaLamp() {
     const blobCount = 8;
     for (let i = 0; i < blobCount; i++) {
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         const radius = 25 + Math.random() * 45;
-        
         circle.setAttribute("r", radius);
-        circle.setAttribute("cx", 40 + Math.random() * 120);
+        circle.setAttribute("cx", 100);
         circle.setAttribute("cy", 450);
         
-        // Flat shades of blue/cyan
+        // Flat shades of blue
         const blues = ["#1d4ed8", "#0284c7", "#2563eb", "#3b82f6"];
         circle.setAttribute("fill", blues[Math.floor(Math.random() * blues.length)]);
-        circle.setAttribute("opacity", "1.0"); // FULLY OPAQUE
+        circle.setAttribute("opacity", "1.0"); 
         blobContainer.appendChild(circle);
         
         const blobData = {
@@ -219,30 +234,25 @@ function initLavaLamp() {
             r: radius,
             x: 40 + Math.random() * 120,
             y: 450,
-            speed: 0.1 + Math.random() * 0.2, // MUCH SLOWER
+            speed: 0.1 + Math.random() * 0.2, 
             offset: Math.random() * Math.PI * 2
         };
         blobs.push(blobData);
 
-        // --- ORGANIC MOTION ---
         const animateSingleBlob = () => {
-            const duration = 25000 + Math.random() * 20000; // VERY SLOW (25-45 seconds)
+            const duration = 25000 + Math.random() * 20000;
             anime({
                 targets: blobData,
-                y: [-150, 550], // Wider vertical range for slower movement
+                y: [-150, 550],
                 direction: 'reverse',
                 loop: true,
                 duration: duration,
                 easing: 'easeInOutSine',
                 update: () => {
                     if (currentViz !== 'lava') return;
-                    
                     const drift = Math.sin(Date.now() / 2500 + blobData.offset) * 20;
                     blobData.el.setAttribute("cy", blobData.y);
                     blobData.el.setAttribute("cx", blobData.x + drift);
-                    
-                    // "SQUASH & STRETCH" to make it look like a liquid blob
-                    // Stretch vertically as it moves up/down
                     const stretch = 1 + Math.abs(Math.sin(Date.now() / 4000 + blobData.offset)) * 0.4;
                     blobData.el.style.transform = `scale(${1/stretch}, ${stretch})`;
                     blobData.el.style.transformOrigin = `${blobData.x + drift}px ${blobData.y}px`;
@@ -252,7 +262,6 @@ function initLavaLamp() {
         animateSingleBlob();
     }
 
-    // Handle Bass Reactivity
     function pulse() {
         requestAnimationFrame(pulse);
         if (currentViz !== 'lava' || !isPlaying) return;
@@ -261,10 +270,9 @@ function initLavaLamp() {
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 480;
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 500;
         lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
 
-        // Solid, strong glow matching the blue blobs (calmed down)
         const glow = 15 + intensity * 40;
         blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(37, 99, 235, 0.6))`;
     }
@@ -290,7 +298,6 @@ function setupLoop() {
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
         pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
         
-        // --- SOFT RHYTHMIC BASS ---
         const root = chordNotes[0].replace(/[34]/, '2');
         const fifth = chordNotes[2].replace(/[34]/, '2');
         bass.triggerAttackRelease(root, "2n", time, 0.5);
