@@ -231,17 +231,45 @@ function setupLoop() {
 
 // UI Handlers
 startStopBtn.addEventListener('click', async () => {
+    // 1. Initial Build if needed
     if (!initialized) {
         startStopBtn.innerText = "Building...";
         await initAudio();
         startStopBtn.innerText = "Start Music";
     }
 
+    // 2. Perform the Backflip Animation
+    anime({
+        targets: startStopBtn,
+        rotateX: '+=360',
+        translateY: [
+            { value: -100, duration: 400, easing: 'easeOutCubic' }, // Jump
+            { value: 0, duration: 500, easing: 'easeInCubic' }     // Fall
+        ],
+        scaleX: [
+            { value: 1, duration: 700 },
+            { value: 1.2, duration: 100, easing: 'easeOutQuad' }, // Squash on land
+            { value: 1, duration: 200, easing: 'easeInOutQuad' }
+        ],
+        scaleY: [
+            { value: 1, duration: 700 },
+            { value: 0.8, duration: 100, easing: 'easeOutQuad' }, // Stretch on land
+            { value: 1, duration: 200, easing: 'easeInOutQuad' }
+        ],
+        update: (anim) => {
+            // Change text halfway through the flip (around 450ms)
+            if (anim.currentTime > 450 && anim.currentTime < 500) {
+                startStopBtn.innerText = isPlaying ? "Start Music" : "Stop Music";
+            }
+        },
+        duration: 1000
+    });
+
+    // 3. Audio Toggling Logic
     if (isPlaying) {
         mainVol.volume.rampTo(-Infinity, 0.1);
         setTimeout(() => {
             Tone.Transport.pause();
-            startStopBtn.innerText = "Start Music";
             body.classList.remove('playing');
         }, 120);
     } else {
@@ -249,7 +277,6 @@ startStopBtn.addEventListener('click', async () => {
         const targetVol = parseFloat(volumeSlider.value);
         mainVol.volume.value = -Infinity;
         mainVol.volume.rampTo(targetVol, 0.2);
-        startStopBtn.innerText = "Stop Music";
         body.classList.add('playing');
     }
     isPlaying = !isPlaying;
