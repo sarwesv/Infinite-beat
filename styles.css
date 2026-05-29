@@ -109,9 +109,9 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
-    width: 90%;
+    width: 85vw; /* Responsive width */
     max-width: 420px;
-    padding: 3.5rem 2.5rem;
+    padding: 5vh 2.5vw; /* Responsive padding */
     text-align: center;
     background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(50px) saturate(200%);
@@ -120,10 +120,16 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9);
     pointer-events: auto;
+    
+    /* Flex layout for internal shrinking */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-height: 90vh;
 }
 
 header h1 {
-    font-size: 3rem;
+    font-size: clamp(1.5rem, 6vw, 3rem); /* Dynamic text sizing */
     font-weight: 800;
     letter-spacing: -0.04em;
     margin-bottom: 0.5rem;
@@ -134,7 +140,7 @@ header h1 {
 
 header p {
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: clamp(0.8rem, 2.5vw, 1.1rem);
     margin-bottom: 2rem;
     font-weight: 500;
 }
@@ -167,16 +173,16 @@ header p {
 .controls {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: 3vh;
 }
 
 .btn-primary {
     background: rgba(255, 255, 255, 0.08);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 1.8rem 3.5rem;
-    border-radius: 24px;
-    font-size: 1.8rem;
+    padding: clamp(1rem, 3vh, 1.8rem) 1rem;
+    border-radius: 20px;
+    font-size: clamp(1rem, 4vw, 1.6rem);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -201,6 +207,7 @@ header p {
     text-transform: uppercase;
 }
 
+/* Glass Slider Styling */
 input[type=range] {
     -webkit-appearance: none;
     width: 100%;
@@ -226,6 +233,4 @@ input[type=range]::-webkit-slider-thumb {
 
 @media (max-width: 600px) {
     #app { padding: 2rem; width: 95%; }
-    header h1 { font-size: 2.2rem; }
-    .btn-primary { padding: 1.2rem; font-size: 1.4rem; }
 }
