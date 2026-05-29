@@ -1,5 +1,5 @@
 /**
- * Infinite Lo-Fi Audio Engine - Multi-Viz Edition
+ * Infinite Lo-Fi Audio Engine - LEGO Visualizer Edition
  * Optimized for Mobile/iPad Performance
  */
 
@@ -10,9 +10,6 @@ let initialized = false;
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
 const canvas = document.getElementById('visualizer-canvas');
-const lavaLamp = document.getElementById('lava-lamp');
-const btnLego = document.getElementById('show-lego');
-const btnLava = document.getElementById('show-lava');
 const ctx = canvas.getContext('2d');
 const body = document.body;
 
@@ -23,7 +20,6 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 // Visualizer State
 let barHeights = new Array(32).fill(0);
 let rotationAngle = 0;
-let currentViz = 'lego';
 
 /**
  * Initialize Audio Engine
@@ -85,7 +81,6 @@ async function initAudio() {
 
         setupLoop();
         startLegoVisualizer();
-        initLavaLampSync();
         initialized = true;
     } catch (e) {
         console.error("Initialization failed", e);
@@ -131,7 +126,7 @@ function startLegoVisualizer() {
         const w = canvas.width = window.innerWidth;
         const h = canvas.height = window.innerHeight;
         ctx.clearRect(0, 0, w, h);
-        if (!isPlaying || currentViz !== 'lego') return;
+        if (!isPlaying) return;
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
         const centerX = w / 2; const centerY = h / 2;
@@ -147,29 +142,6 @@ function startLegoVisualizer() {
         bricks.forEach(b => drawLegoBrick(b.x, b.y, 14, b.h, b.color));
     }
     render();
-}
-
-/**
- * New Lava Lamp Logic (Sync Scale with Music)
- */
-function initLavaLampSync() {
-    function pulse() {
-        requestAnimationFrame(pulse);
-        if (currentViz !== 'lava' || !isPlaying) return;
-
-        const fftData = analyser.getValue();
-        const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
-        const intensity = (bassLevel + 100) / 100;
-
-        // Sync Scale with Viewport
-        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 480;
-        lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
-
-        // Dynamic Glow
-        const glow = 20 + intensity * 40;
-        lavaLamp.style.boxShadow = `inset 0 0 100px rgba(0,0,0,1), 0 0 ${glow * 2}px rgba(59, 130, 246, 0.3)`;
-    }
-    pulse();
 }
 
 /**
@@ -206,22 +178,6 @@ function setupLoop() {
 }
 
 // UI Handlers
-btnLego.addEventListener('click', () => {
-    currentViz = 'lego';
-    canvas.style.display = 'block';
-    lavaLamp.style.display = 'none';
-    btnLego.classList.add('active');
-    btnLava.classList.remove('active');
-});
-
-btnLava.addEventListener('click', () => {
-    currentViz = 'lava';
-    canvas.style.display = 'none';
-    lavaLamp.style.display = 'block';
-    btnLava.classList.add('active');
-    btnLego.classList.remove('active');
-});
-
 startStopBtn.addEventListener('click', async () => {
     if (!initialized) { startStopBtn.innerText = "Building..."; await initAudio(); }
     if (isPlaying) {

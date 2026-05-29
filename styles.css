@@ -7,9 +7,6 @@
     --accent-color: #3b82f6;
     --accent-glow: rgba(59, 130, 246, 0.4);
     --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    
-    /* NEW LAVA THEME */
-    --lava-color: #3b82f6; 
 }
 
 * {
@@ -51,59 +48,6 @@ body {
     filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
-/* --- NEW LAVA LAMP STYLES --- */
-#lava-lamp {
-    height: 90vh !important;
-    width: auto !important;
-    aspect-ratio: 1 / 2.2;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 140px 140px 60px 60px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
-        inset 0 0 120px rgba(0,0,0,1),
-        0 0 150px rgba(59, 130, 246, 0.15);
-    overflow: hidden;
-}
-
-.lava-lamp__svg {
-    width: 100%;
-    height: 100%;
-    filter: url(#goo);
-}
-
-.blob {
-    animation-delay: calc(var(--delay) * 1s);
-    animation-direction: var(--direction);
-    animation-duration: calc(var(--speed) * 1s);
-    animation-iteration-count: infinite;
-    animation-name: blob-rise;
-    animation-timing-function: ease-in-out;
-    fill: var(--lava-color);
-    opacity: 1; /* Force full opacity */
-    will-change: transform; /* Force GPU acceleration for smooth motion */
-    transform: translateZ(0); /* Force 3D context */
-}
-
-.blob--top, .blob--bottom {
-    animation: blob-sway 20s infinite ease-in-out;
-}
-
-@keyframes blob-rise {
-    0% { transform: translateY(110%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.1); }
-    100% { transform: translateY(-110%) scale(1); }
-}
-
-@keyframes blob-sway {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(20px); }
-    75% { transform: translateX(-20px); }
-}
-
 /* --- OVERLAY UI --- */
 #app {
     position: absolute;
@@ -111,9 +55,9 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 9999;
-    width: 85vw; /* Responsive width */
+    width: 85vw;
     max-width: 420px;
-    padding: 5vh 2.5vw; /* Responsive padding */
+    padding: 5vh 2.5vw;
     text-align: center;
     background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(50px) saturate(200%);
@@ -123,7 +67,6 @@ body {
     box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9);
     pointer-events: auto;
     
-    /* Flex layout for internal shrinking */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -131,7 +74,7 @@ body {
 }
 
 header h1 {
-    font-size: clamp(1.5rem, 6vw, 3rem); /* Dynamic text sizing */
+    font-size: clamp(1.5rem, 6vw, 3rem);
     font-weight: 800;
     letter-spacing: -0.04em;
     margin-bottom: 0.5rem;
@@ -145,31 +88,6 @@ header p {
     font-size: clamp(0.8rem, 2.5vw, 1.1rem);
     margin-bottom: 2rem;
     font-weight: 500;
-}
-
-.viz-switcher {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.btn-mini {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--surface-border);
-    color: var(--text-secondary);
-    padding: 0.5rem 1.2rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-mini.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--accent-color);
-    color: white;
 }
 
 .controls {
@@ -209,7 +127,6 @@ header p {
     text-transform: uppercase;
 }
 
-/* Glass Slider Styling */
 input[type=range] {
     -webkit-appearance: none;
     width: 100%;

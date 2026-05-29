@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infinite Lo-Fi Beats</title>
-    <!-- Version: 1.0.4 - New CSS-based Lava Animation -->
+    <!-- Version: 1.0.5 - Minimalist LEGO Visualizer -->
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -13,31 +13,6 @@
     <!-- BACKGROUND LAYER -->
     <div class="visualizer-container">
         <canvas id="visualizer-canvas"></canvas>
-        
-        <!-- OPTIMIZED LAVA LAMP -->
-        <div id="lava-lamp" style="display: none;">
-            <svg class="lava-lamp__svg" viewBox="0 0 180 500" preserveAspectRatio="xMidYMid slice">
-                <ellipse class="blob blob--top" cx="90" cy="40" rx="40" ry="15" />
-                <ellipse class="blob blob--bottom" cx="90" cy="460" rx="80" ry="15" />
-                <circle class="blob" cx="50" cy="500" r="25" style="--speed: 25; --delay: 0; --direction: alternate"/>
-                <circle class="blob" cx="130" cy="500" r="35" style="--speed: 35; --delay: -5; --direction: alternate-reverse"/>
-                <circle class="blob" cx="90" cy="500" r="30" style="--speed: 30; --delay: -10; --direction: alternate"/>
-                <circle class="blob" cx="40" cy="500" r="20" style="--speed: 28; --delay: -3; --direction: alternate-reverse"/>
-                <circle class="blob" cx="140" cy="500" r="28" style="--speed: 40; --delay: -7; --direction: alternate"/>
-                <circle class="blob" cx="70" cy="500" r="32" style="--speed: 38; --delay: -12; --direction: alternate-reverse"/>
-                <circle class="blob" cx="110" cy="500" r="22" style="--speed: 32; --delay: -2; --direction: alternate"/>
-                <circle class="blob" cx="60" cy="500" r="26" style="--speed: 34; --delay: -8; --direction: alternate-reverse"/>
-            </svg>
-            <!-- High-Performance Gooey Filter -->
-            <svg style="position: absolute; width: 0; height: 0;">
-                <defs>
-                    <filter id="goo">
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
-                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 80 -30" result="goo"/>
-                    </filter>
-                </defs>
-            </svg>
-        </div>
     </div>
 
     <!-- UI LAYER -->
@@ -48,11 +23,6 @@
         </header>
 
         <main>
-            <div class="viz-switcher">
-                <button id="show-lego" class="btn-mini active">LEGO</button>
-                <button id="show-lava" class="btn-mini">LAVA</button>
-            </div>
-
             <div class="controls">
                 <button id="start-stop" class="btn-primary">Start Music</button>
                 <div class="volume-control">
