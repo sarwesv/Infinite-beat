@@ -152,13 +152,14 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop
+ * LEGO Visualizer Main Loop with Depth Sorting
  */
 function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
-        const w = canvas.width = canvas.offsetWidth;
-        const h = canvas.height = canvas.offsetHeight;
+        // Sync canvas size to window for full screen
+        const w = canvas.width = window.innerWidth;
+        const h = canvas.height = window.innerHeight;
         ctx.clearRect(0, 0, w, h);
 
         if (!isPlaying || currentViz !== 'lego') return;
@@ -166,16 +167,18 @@ function startLegoVisualizer() {
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
         const centerX = w / 2;
-        const centerY = h * 0.75;
+        const centerY = h / 2 + 100; // Centered baseplate in the full window
 
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100);
-            const target = Math.max(10, rawVal * (h / 200));
+            const target = Math.max(10, rawVal * (h / 250)); // Scale for full height
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            const radius = Math.min(w, h) * 0.35;
+            // Responsive radius
+            const radius = Math.min(w, h) * 0.4;
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            
             const x = centerX + Math.cos(brickAngle) * radius;
             const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
             let color = "#2563eb";
@@ -184,7 +187,7 @@ function startLegoVisualizer() {
             bricks.push({ x, y, h: barHeights[i], color });
         }
         bricks.sort((a, b) => a.y - b.y);
-        bricks.forEach(b => drawLegoBrick(b.x, b.y, 14, b.h, b.color));
+        bricks.forEach(b => drawLegoBrick(b.x, b.y, 18, b.h, b.color)); // Slightly larger bricks
     }
     render();
 }
@@ -217,7 +220,10 @@ function initLavaLamp() {
 
         const fftData = analyser.getValue();
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
-        const scale = 1 + (bassLevel + 100) / 250;
+        
+        // Responsive scaling for the blob
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 300;
+        const scale = baseScale * (1 + (bassLevel + 100) / 300);
         lavaLamp.style.transform = `scale(${scale})`;
         
         const hue = (Date.now() / 100) % 360;
