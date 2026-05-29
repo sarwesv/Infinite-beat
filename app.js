@@ -9,11 +9,12 @@ let initialized = false;
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
-const visualizer = document.getElementById('visualizer');
+const canvas = document.getElementById('visualizer-canvas');
+const ctx = canvas.getContext('2d');
 const body = document.body;
 
 // Instruments & Effects
-let limiter, vol, reverb, vinylNoise;
+let limiter, vol, reverb, vinylNoise, analyser;
 let kick, snare, hihat, rim, keys, bass, lead, pad;
 let drumBus, keysBus, leadBus, bassBus, padBus;
 
@@ -26,6 +27,10 @@ async function initAudio() {
     // Master Chain
     limiter = new Tone.Limiter(-1).toDestination();
     vol = new Tone.Volume(-12).connect(limiter);
+    
+    // Analyser for Visualization
+    analyser = new Tone.Analyser("fft", 64);
+    vol.connect(analyser);
     
     // Global Reverb (Rich and Deep)
     reverb = new Tone.Freeverb({ roomSize: 0.7, dampening: 3000, wet: 0.25 }).connect(vol);
@@ -103,7 +108,45 @@ async function initAudio() {
     lead.volume.value = -20;
 
     setupSequences();
+    startVisualizer();
     initialized = true;
+}
+
+/**
+ * Real-time canvas visualizer
+ */
+function startVisualizer() {
+    function draw() {
+        requestAnimationFrame(draw);
+        
+        const width = canvas.width = canvas.offsetWidth;
+        const height = canvas.height = canvas.offsetHeight;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        if (!isPlaying) return;
+
+        const values = analyser.getValue();
+        const barWidth = (width / values.length) * 2;
+        let x = 0;
+
+        for (let i = 0; i < values.length; i++) {
+            // Convert dB to a usable height
+            const val = (values[i] + 100) * (height / 100);
+            const barHeight = Math.max(4, val * 0.8);
+            
+            // Create gradient color
+            const hue = 210 + (i * 2); // Blueish hue
+            ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+            
+            // Draw bars centered vertically
+            ctx.fillRect(x, (height - barHeight) / 2, barWidth - 2, barHeight);
+            
+            x += barWidth;
+        }
+    }
+    draw();
 }
 
 /**
@@ -121,14 +164,6 @@ function setupSequences() {
         if (hit === "S") snare.triggerAttackRelease("16n", time, 0.6);
         if (hit === "h") hihat.triggerAttackRelease("32n", time, 0.2);
         if (hit === "R") rim.triggerAttackRelease("G4", "32n", time, 0.3);
-        
-        // Visualizer pulse on Kick or Snare
-        if (hit === "K" || hit === "S") {
-            Tone.Draw.schedule(() => {
-                visualizer.style.transform = "scale(1.25)";
-                setTimeout(() => visualizer.style.transform = "scale(1)", 120);
-            }, time);
-        }
     }, drumPattern, "16n").start(0);
 
     // 2. Chords, Bass & Melody Logic
