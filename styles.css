@@ -24,10 +24,9 @@ body {
     font-family: var(--font-main);
     height: 100vh;
     width: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin: 0;
     overflow: hidden;
+    position: relative; /* Base for absolute children */
 }
 
 /* --- FULLSCREEN VISUALIZER --- */
@@ -35,19 +34,16 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     z-index: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     pointer-events: none;
 }
 
 #visualizer-canvas {
     width: 100% !important;
     height: 100% !important;
-    position: absolute;
+    display: block;
     filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
@@ -55,6 +51,10 @@ body {
     height: 90vh !important;
     width: auto !important;
     aspect-ratio: 1 / 2;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Strictly center the bottle */
     background: rgba(0, 0, 0, 0.7);
     border-radius: 120px 120px 60px 60px;
     border: 2px solid rgba(255, 255, 255, 0.15);
@@ -66,10 +66,13 @@ body {
 
 /* --- OVERLAY UI --- */
 #app {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Force perfect screen center */
     z-index: 10;
     width: 90%;
-    max-width: 480px;
+    max-width: 460px;
     padding: 3rem;
     text-align: center;
     background: rgba(255, 255, 255, 0.03);

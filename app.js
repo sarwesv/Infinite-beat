@@ -27,6 +27,14 @@ let rotationAngle = 0;
 let currentViz = 'lego';
 let blobs = [];
 
+// Lava Lamp Blob Shapes (SVG Path Data)
+const blobShapes = [
+    "M100,20 C140,20 180,60 180,100 C180,140 140,180 100,180 C60,180 20,140 20,100 C20,60 60,20 100,20",
+    "M100,20 C160,20 190,70 190,110 C190,150 150,190 100,190 C50,190 10,150 10,110 C10,70 40,20 100,20",
+    "M100,30 C130,30 170,50 170,90 C170,130 140,170 100,170 C60,170 30,130 30,90 C30,50 70,30 100,30",
+    "M100,20 C150,20 180,50 180,100 C180,150 150,180 100,180 C50,180 20,150 20,100 C20,50 50,20 100,20"
+];
+
 /**
  * Initialize Audio Engine
  */
@@ -145,7 +153,7 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop
+ * LEGO Visualizer Main Loop with STRICT CENTERING
  */
 function startLegoVisualizer() {
     function render() {
@@ -158,8 +166,10 @@ function startLegoVisualizer() {
 
         rotationAngle += 0.008;
         const fftData = analyser.getValue();
+        
+        // PERFECT CENTER
         const centerX = w / 2;
-        const centerY = h / 2 + 100;
+        const centerY = h / 2;
 
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
@@ -167,10 +177,13 @@ function startLegoVisualizer() {
             const target = Math.max(10, rawVal * (h / 250));
             barHeights[i] += (target - barHeights[i]) * 0.15;
 
-            const radius = Math.min(w, h) * 0.4;
+            // Radius larger than UI card
+            const radius = Math.max(280, Math.min(w, h) * 0.42);
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            
             const x = centerX + Math.cos(brickAngle) * radius;
-            const y = centerY + Math.sin(brickAngle) * (radius * 0.45);
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.4);
+            
             let color = "#2563eb";
             if (i < 5) color = "#dc2626";
             if (i > 20) color = "#eab308";
@@ -183,7 +196,7 @@ function startLegoVisualizer() {
 }
 
 /**
- * Lava Lamp - Realistic Multi-Blob System
+ * Lava Lamp - Realistic Multi-Blob System with STRICT CENTERING
  */
 function initLavaLamp() {
     const blobCount = 8;
@@ -191,13 +204,13 @@ function initLavaLamp() {
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         const radius = 25 + Math.random() * 45;
         circle.setAttribute("r", radius);
-        circle.setAttribute("cx", 50 + Math.random() * 100);
+        circle.setAttribute("cx", 100);
         circle.setAttribute("cy", 450);
         const colors = ["#ff0080", "#ff00ff", "#d400ff", "#ff4d94"];
         circle.setAttribute("fill", colors[Math.floor(Math.random() * colors.length)]);
         circle.setAttribute("opacity", "0.9");
         blobContainer.appendChild(circle);
-        blobs.push({ el: circle, r: radius, x: 50 + Math.random() * 100, y: 100 + Math.random() * 400, speed: 0.4 + Math.random() * 1.2, offset: Math.random() * Math.PI * 2 });
+        blobs.push({ el: circle, r: radius, x: 40 + Math.random() * 120, y: 100 + Math.random() * 400, speed: 0.4 + Math.random() * 1.2, offset: Math.random() * Math.PI * 2 });
     }
 
     function animateBlobs() {
@@ -208,29 +221,22 @@ function initLavaLamp() {
         const bassLevel = (fftData[0] + fftData[1] + fftData[2]) / 3;
         const intensity = (bassLevel + 100) / 100;
 
-        // REMOVED Redundant baseScale on the whole SVG
-        // lavaLamp.style.transform = `scale(${baseScale})`;
+        // Centered via CSS, scale here
+        const baseScale = Math.min(window.innerWidth, window.innerHeight) / 420;
+        lavaLamp.style.transform = `translate(-50%, -50%) scale(${baseScale})`;
 
         blobs.forEach((blob) => {
-            blob.y -= blob.speed * (0.4 + intensity * 1.2);
+            blob.y -= blob.speed * (0.5 + intensity * 1.5);
             const drift = Math.sin(Date.now() / 1500 + blob.offset) * 15;
-            
-            // Stay within the 200-unit width viewBox
-            if (blob.y < -100) { 
-                blob.y = 480; 
-                blob.x = 40 + Math.random() * 120; 
-            }
-            
+            if (blob.y < -100) { blob.y = 480; blob.x = 40 + Math.random() * 120; }
             blob.el.setAttribute("cx", blob.x + drift);
             blob.el.setAttribute("cy", blob.y);
-            
-            // React radius to bass (subtle)
-            const dynamicRadius = blob.r * (1 + intensity * 0.15);
+            const dynamicRadius = blob.r * (1 + intensity * 0.25);
             blob.el.setAttribute("r", dynamicRadius);
         });
 
-        const glow = 20 + intensity * 50;
-        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.4))`;
+        const glow = 30 + intensity * 70;
+        blobContainer.style.filter = `drop-shadow(0 0 ${glow}px rgba(255, 0, 128, 0.5))`;
     }
     animateBlobs();
 }
