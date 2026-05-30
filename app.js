@@ -9,6 +9,8 @@ let initialized = false;
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
 const volumeSlider = document.getElementById('volume');
+const legoBtn = document.getElementById('lego-mode');
+const lavaBtn = document.getElementById('lava-mode');
 const canvas = document.getElementById('visualizer-canvas');
 const staggerBg = document.getElementById('stagger-bg');
 const ctx = canvas.getContext('2d');
@@ -21,6 +23,38 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 // Visualizer State
 let barHeights = new Array(32).fill(0);
 let rotationAngle = 0;
+let currentMode = 'lego'; // 'lego' or 'lava'
+
+// Lava Lamp State
+let blobs = [];
+const NUM_BLOBS = 8;
+
+class Blob {
+    constructor(w, h) {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.r = 40 + Math.random() * 60;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.baseR = this.r;
+    }
+    update(w, h, energy) {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.r = this.baseR + energy * 150;
+        if (this.x < -this.r) this.x = w + this.r;
+        if (this.x > w + this.r) this.x = -this.r;
+        if (this.y < -this.r) this.y = h + this.r;
+        if (this.y > h + this.r) this.y = -this.r;
+    }
+}
+
+function initBlobs(w, h) {
+    blobs = [];
+    for (let i = 0; i < NUM_BLOBS; i++) {
+        blobs.push(new Blob(w, h));
+    }
+}
 
 /**
  * Initialize Audio Engine
@@ -30,6 +64,10 @@ async function initAudio() {
         await Tone.start();
         createStaggerGrid();
         
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        initBlobs(w, h);
+
         limiter = new Tone.Limiter(-1).toDestination();
         compressor = new Tone.Compressor({
             threshold: -18,
@@ -82,7 +120,7 @@ async function initAudio() {
         lead.volume.value = -22;
 
         setupLoop();
-        startLegoVisualizer();
+        startVisualizer();
         initialized = true;
     } catch (e) {
         console.error("Initialization failed", e);
@@ -154,32 +192,74 @@ function shadeColor(color, percent) {
 }
 
 /**
- * LEGO Visualizer Main Loop with PERFECT ALIGNMENT
+ * Visualizer Main Loop
  */
-function startLegoVisualizer() {
+function startVisualizer() {
     function render() {
         requestAnimationFrame(render);
         const dpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
+        
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-            canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
+            canvas.width = w * dpr; 
+            canvas.height = h * dpr; 
+            ctx.scale(dpr, dpr);
+            if (initialized) initBlobs(w, h);
         }
+        
         ctx.clearRect(0, 0, w, h);
         if (!isPlaying) return;
-        rotationAngle += 0.007;
+
         const fftData = analyser.getValue();
-        const centerX = w / 2; const centerY = h / 2;
-        let bricks = [];
-        for (let i = 0; i < fftData.length; i++) {
-            const rawVal = (fftData[i] + 100); const target = Math.max(12, rawVal * (h / 350)); barHeights[i] += (target - barHeights[i]) * 0.12;
-            const radius = Math.min(w, h) * 0.45; const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            const x = centerX + Math.cos(brickAngle) * radius; const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
-            let color = "#2563eb"; if (i < 6) color = "#dc2626"; if (i > 22) color = "#facc15";
-            bricks.push({ x, y, h: barHeights[i], color });
+        const centerX = w / 2;
+        const centerY = h / 2;
+
+        if (currentMode === 'lego') {
+            rotationAngle += 0.007;
+            let bricks = [];
+            for (let i = 0; i < fftData.length; i++) {
+                const rawVal = (fftData[i] + 100); 
+                const target = Math.max(12, rawVal * (h / 350)); 
+                barHeights[i] += (target - barHeights[i]) * 0.12;
+                const radius = Math.min(w, h) * 0.45; 
+                const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+                const x = centerX + Math.cos(brickAngle) * radius; 
+                const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
+                let color = "#2563eb"; 
+                if (i < 6) color = "#dc2626"; 
+                if (i > 22) color = "#facc15";
+                bricks.push({ x, y, h: barHeights[i], color });
+            }
+            bricks.sort((a, b) => a.y - b.y);
+            bricks.forEach(b => drawLegoBrick(b.x, b.y, 16, b.h, b.color));
+        } else {
+            // LAVA LAMP MODE (Metaballs-like effect)
+            let avgEnergy = 0;
+            for(let i=0; i<8; i++) avgEnergy += (fftData[i] + 100) / 100;
+            avgEnergy /= 8;
+
+            ctx.save();
+            // Create a blur/glow effect
+            ctx.filter = 'blur(40px) contrast(20)';
+            
+            // Draw blobs
+            blobs.forEach((blob, i) => {
+                const energy = (fftData[i % fftData.length] + 100) / 100;
+                blob.update(w, h, energy);
+                
+                const grad = ctx.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, blob.r);
+                let color = i % 2 === 0 ? "rgba(255, 65, 54, 0.8)" : "rgba(255, 133, 27, 0.8)";
+                grad.addColorStop(0, color);
+                grad.addColorStop(1, "rgba(255, 65, 54, 0)");
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(blob.x, blob.y, blob.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
         }
-        bricks.sort((a, b) => a.y - b.y);
-        bricks.forEach(b => drawLegoBrick(b.x, b.y, 16, b.h, b.color));
     }
     render();
 }
@@ -238,6 +318,18 @@ startStopBtn.addEventListener('click', async () => {
 
 volumeSlider.addEventListener('input', (e) => {
     if (mainVol) mainVol.volume.rampTo(parseFloat(e.target.value), 0.05);
+});
+
+legoBtn.addEventListener('click', () => {
+    currentMode = 'lego';
+    legoBtn.classList.add('active');
+    lavaBtn.classList.remove('active');
+});
+
+lavaBtn.addEventListener('click', () => {
+    currentMode = 'lava';
+    lavaBtn.classList.add('active');
+    legoBtn.classList.remove('active');
 });
 
 window.addEventListener('resize', () => {
