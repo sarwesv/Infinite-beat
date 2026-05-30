@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.9";
+const APP_VERSION = "1.2.0";
 
 /**
  * Auto-Update Feature
@@ -40,8 +40,8 @@ let limiter, compressor, mainVol, analyser, reverb, delay;
 let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 // Visualizer State
-let barHeights = new Array(32).fill(0);
-let brickScales = new Array(32).fill(1); 
+let barHeights = new Array(32).fill(12);
+let globalScale = 1; 
 let rotationAngle = 0;
 
 /**
@@ -196,17 +196,15 @@ function startLegoVisualizer() {
         
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
             canvas.width = w * dpr; 
-            canvas.height = h * dpr; 
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            canvas.height = h * dpr;
         }
         
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
         
-        // Keep rotating slowly even when paused
         rotationAngle += 0.007;
 
-        // If not playing, use a silent array to slide bars down
-        const fftData = (initialized && isPlaying) ? analyser.getValue() : new Float32Array(32).fill(-100);
+        const fftData = (initialized && isPlaying) ? analyser.getValue() : null;
         
         const centerX = w / 2; 
         const centerY = h / 2; 
@@ -215,13 +213,16 @@ function startLegoVisualizer() {
         const radiusX = Math.min(w * 0.42, h * 0.8); 
         const radiusY = radiusX * 0.35; 
 
-        for (let i = 0; i < fftData.length; i++) {
-            const rawVal = (fftData[i] + 100); 
-            const target = Math.max(12, rawVal * (h / 350)); 
-            // Interpolate towards the target
+        for (let i = 0; i < 32; i++) {
+            let target = 12;
+            if (fftData) {
+                const rawVal = (fftData[i] + 100); 
+                target = Math.max(12, rawVal * (h / 350)); 
+            }
+            
             barHeights[i] += (target - barHeights[i]) * 0.12;
 
-            const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            const brickAngle = (i / 32) * Math.PI * 2 + rotationAngle;
             const x = centerX + Math.cos(brickAngle) * radiusX; 
             const y = centerY + Math.sin(brickAngle) * radiusY;
 
@@ -229,12 +230,12 @@ function startLegoVisualizer() {
             if (i < 6) color = "#dc2626"; 
             if (i > 22) color = "#facc15";
 
-            // Multiply height and size by individual brick scale
-            bricks.push({ x, y, h: barHeights[i] * brickScales[i], size: 16 * brickScales[i], color });
-            }
-            bricks.sort((a, b) => a.y - b.y);
-            bricks.forEach(b => drawLegoBrick(b.x, b.y, b.size, b.h, b.color));
-
+            bricks.push({ x, y, h: barHeights[i] * globalScale, size: 16 * globalScale, color });
+        }
+        bricks.sort((a, b) => a.y - b.y);
+        bricks.forEach(b => {
+            if (b.size > 0.1) drawLegoBrick(b.x, b.y, b.size, b.h, b.color);
+        });
     }
     render();
 }
@@ -359,17 +360,16 @@ startStopBtn.addEventListener('click', async () => {
                 mainVol.volume.rampTo(NICE_VOLUME, 0.4);
             }
             
-            // LEGO BUILD ENTRANCE ANIMATION
-            // First reset scales to 0
-            brickScales.fill(0);
-            
-            // Then stagger them back to 1
+            // SIMPLE ENTRANCE ANIMATION
+            globalScale = 0;
             anime({
-                targets: brickScales,
-                ...Array.from({length: 32}, (_, i) => ({ [i]: 1 })).reduce((acc, curr) => ({...acc, ...curr}), {}),
-                delay: anime.stagger(30),
-                duration: 900,
-                easing: 'easeOutElastic(1, .8)'
+                targets: {s: 0},
+                s: 1,
+                duration: 1000,
+                easing: 'easeOutElastic(1, .8)',
+                update: (anim) => {
+                    globalScale = anim.animations[0].currentValue;
+                }
             });
             
             body.classList.add('playing');
