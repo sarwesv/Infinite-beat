@@ -222,18 +222,45 @@ function setupLoop() {
 
 // UI Handlers
 startStopBtn.addEventListener('click', async () => {
-    if (!initialized) { startStopBtn.innerText = "Building..."; await initAudio(); }
-    if (isPlaying) {
-        mainVol.volume.rampTo(-Infinity, 0.1);
-        setTimeout(() => { Tone.Transport.pause(); body.classList.remove('playing'); }, 120);
-        startStopBtn.innerText = "Start Music";
-    } else {
-        Tone.Transport.start();
-        const targetVol = parseFloat(volumeSlider.value);
-        mainVol.volume.value = -Infinity; mainVol.volume.rampTo(targetVol, 0.2);
-        body.classList.add('playing'); startStopBtn.innerText = "Stop Music";
+    try {
+        if (typeof Tone === 'undefined') {
+            startStopBtn.innerText = "Error: Tone.js not loaded";
+            return;
+        }
+
+        if (!initialized) {
+            startStopBtn.innerText = "Building...";
+            await initAudio();
+            if (!initialized) return; // initAudio failed but caught its own error
+        }
+
+        if (isPlaying) {
+            // FADE OUT
+            if (mainVol) mainVol.volume.rampTo(-Infinity, 0.15);
+            setTimeout(() => {
+                Tone.Transport.pause();
+                body.classList.remove('playing');
+                startStopBtn.innerText = "Start Music";
+            }, 150);
+        } else {
+            // FADE IN
+            await Tone.start(); // Ensure context is resumed
+            Tone.Transport.start();
+            
+            const targetVol = volumeSlider ? parseFloat(volumeSlider.value) : -12;
+            if (mainVol) {
+                mainVol.volume.value = -Infinity;
+                mainVol.volume.rampTo(targetVol, 0.4);
+            }
+            
+            body.classList.add('playing');
+            startStopBtn.innerText = "Stop Music";
+        }
+        isPlaying = !isPlaying;
+    } catch (err) {
+        console.error("Click handler error:", err);
+        startStopBtn.innerText = "Error: " + (err.message || "Failed to start");
     }
-    isPlaying = !isPlaying;
 });
 
 volumeSlider.addEventListener('input', (e) => {
