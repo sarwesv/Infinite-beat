@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.5";
+const APP_VERSION = "1.1.6";
 
 /**
  * Auto-Update Feature
@@ -188,12 +188,18 @@ function shadeColor(color, percent) {
 function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
+        
+        // Use client dimensions for more accurate centering
         const dpr = window.devicePixelRatio || 1;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-            canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
+            canvas.width = w * dpr; 
+            canvas.height = h * dpr; 
+            ctx.scale(dpr, dpr);
         }
+        
         ctx.clearRect(0, 0, w, h);
         
         // Keep rotating slowly even when paused
@@ -203,13 +209,12 @@ function startLegoVisualizer() {
         const fftData = (initialized && isPlaying) ? analyser.getValue() : new Float32Array(32).fill(-100);
         
         const centerX = w / 2; 
-        // Offset centerY slightly DOWN to center the "mass" of the bricks
-        const centerY = (h / 2) + 40; 
+        const centerY = h / 2; 
         
         let bricks = [];
-        // Use a consistent radius calculation
-        const radiusX = Math.min(w, h) * 0.42; 
-        const radiusY = radiusX * 0.35; // Perspective factor
+        // Refined radius logic to ensure it's always centered and fits the screen
+        const radiusX = Math.min(w * 0.42, h * 0.8); 
+        const radiusY = radiusX * 0.35; // Standard isometric perspective
 
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100); 
