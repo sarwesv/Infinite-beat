@@ -47,6 +47,12 @@ async function initAudio() {
 
         reverb = new Tone.JCReverb(0.5).connect(mainVol);
         delay = new Tone.FeedbackDelay("8n.", 0.2).connect(reverb);
+        
+        // Lo-fi Tape Wobble Effect
+        const vibrato = new Tone.Vibrato({
+            frequency: 4,
+            depth: 0.15
+        }).connect(delay);
 
         rain = new Tone.Noise("pink");
         rain.volume.value = -38;
@@ -72,11 +78,12 @@ async function initAudio() {
         shaker.volume.value = -32;
 
         const bassDist = new Tone.Distortion(0.05).connect(mainVol);
-        bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 120, octaves: 2 }}).connect(bassDist);
-        bass.volume.value = +4;
+        bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 120, octaves: 2 }}).connect(bassDist);
+        bass.volume.value = -6;
 
-        keys = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1 }}).connect(delay);
+        keys = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1 }}).connect(vibrato);
         keys.volume.value = -18;
+
 
         pad = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 }}).connect(reverb);
         pad.volume.value = -28;
@@ -206,36 +213,88 @@ function startLegoVisualizer() {
  * Generative Music Loop
  */
 function setupLoop() {
+    // Advanced Drum Patterns (Ghost notes and variation)
     const drumSeq = new Tone.Sequence((time, hit) => {
+        if (hit === "K") kick.triggerAttackRelease("C1", "8n", time);
+        if (hit === "S") snare.triggerAttackRelease("16n", time);
+        if (hit === "H") hihat.triggerAttackRelease("32n", time, 0.4);
+        if (hit === "h") shaker.triggerAttackRelease("32n", time, 0.15);
+        if (hit === "gs") snare.triggerAttackRelease("32n", time, 0.1); // Ghost snare
+        
         if (hit === "K") {
-            kick.triggerAttackRelease("C1", "8n", time);
             Tone.Draw.schedule(() => triggerStaggerRipple(), time);
         }
-        if (hit === "S") snare.triggerAttackRelease("16n", time);
-        if (hit === "H") hihat.triggerAttackRelease("32n", time, 0.5);
-        if (hit === "h") shaker.triggerAttackRelease("32n", time, 0.2);
-    }, [ "K", "h", "H", "h", "S", "h", "K", "h", "K", "h", "H", "h", "S", "h", null, "h" ], "8n").start(0);
+    }, [ 
+        "K", "h", ["H", "gs"], "h", 
+        "S", "h", "K", "gs", 
+        "K", ["h", "gs"], "H", "h", 
+        "S", "h", ["K", "gs"], "h" 
+    ], "8n").start(0);
 
-    const chords = [ ["C4", "E4", "G4", "B4"], ["A3", "C4", "E4", "G4"], ["F3", "A3", "C4", "E4"], ["G3", "B3", "D4", "F4"], ["D4", "F4", "A4", "C5"], ["E3", "G3", "B3", "D4"] ];
-    let currentChordIndex = 0;
+    // Lo-Fi Jazz Chord Progressions (7ths, 9ths, 11ths)
+    const progressions = [
+        ["Cmaj7", "Am7", "Dm7", "G7"],    // I-vi-ii-V
+        ["Fmaj7", "G7", "Em7", "Am7"],   // IV-V-iii-vi
+        ["Dm9", "G13", "Cmaj9", "A7b13"], // Jazz Turnaround
+        ["Am9", "D13", "Gmaj7", "E7alt"]  // ii-V-I
+    ];
+    
+    // Mapping chord names to notes
+    const chordNotesMap = {
+        "Cmaj7": ["C4", "E4", "G4", "B4"], "Am7": ["A3", "C4", "E4", "G4"], "Dm7": ["D4", "F4", "A4", "C5"], "G7": ["G3", "B3", "D4", "F4"],
+        "Fmaj7": ["F3", "A3", "C4", "E4"], "Em7": ["E3", "G3", "B3", "D4"], 
+        "Dm9": ["D4", "F4", "A4", "C5", "E5"], "G13": ["G3", "B3", "F4", "A4", "E5"], "Cmaj9": ["C4", "E4", "G4", "B4", "D5"], "A7b13": ["A3", "C#4", "G4", "F5"],
+        "Am9": ["A3", "C4", "E4", "G4", "B4"], "D13": ["D4", "F#4", "C5", "E5", "B5"], "Gmaj7": ["G3", "B3", "D4", "F#4"], "E7alt": ["E3", "G#3", "D4", "G4", "C5"]
+    };
+
+    let currentProgression = progressions[Math.floor(Math.random() * progressions.length)];
+    let chordIndex = 0;
+
     const musicLoop = new Tone.Loop((time) => {
-        if (Tone.Transport.position.split(":")[1] === "0" && Math.random() > 0.5) { currentChordIndex = Math.floor(Math.random() * chords.length); }
-        const chordNotes = chords[currentChordIndex];
+        // Step to next chord in progression
+        const chordName = currentProgression[chordIndex];
+        const chordNotes = chordNotesMap[chordName];
+        
+        // Change progression occasionally
+        if (chordIndex === 0 && Math.random() > 0.7) {
+            currentProgression = progressions[Math.floor(Math.random() * progressions.length)];
+        }
+        chordIndex = (chordIndex + 1) % currentProgression.length;
+
+        // Trigger lush keys and pads
         keys.triggerAttackRelease(chordNotes, "2n", time, 0.4);
-        pad.triggerAttackRelease(chordNotes, "1n", time, 0.2);
-        const root = chordNotes[0].replace(/[34]/, '2'); const fifth = chordNotes[2].replace(/[34]/, '2');
-        bass.triggerAttackRelease(root, "2n", time, 0.5);
+        pad.triggerAttackRelease(chordNotes, "1n", time, 0.15);
+
+        // Syncopated Bassline
+        const root = chordNotes[0].replace(/[345]/, '2');
+        const fifth = chordNotes[2].replace(/[345]/, '2');
+        
+        bass.triggerAttackRelease(root, "4n", time, 0.5);
+        
+        // Rhythmic Bass variations
         if (Math.random() > 0.4) {
-            const bassOffset = Math.random() > 0.5 ? "2n" : "2n + 8n";
-            const bassNote = Math.random() > 0.7 ? fifth : root;
-            bass.triggerAttackRelease(bassNote, "8n", time + Tone.Time(bassOffset).toSeconds(), 0.3);
+            bass.triggerAttackRelease(root, "8n", time + Tone.Time("4n").toSeconds(), 0.3);
         }
-        if (Math.random() > 0.4) {
-            const melodyNote = chordNotes[Math.floor(Math.random() * chordNotes.length)].replace(/[34]/, '5');
-            lead.triggerAttackRelease(melodyNote, "2n", time + Tone.Time("4n").toSeconds(), 0.3);
+        if (Math.random() > 0.6) {
+            bass.triggerAttackRelease(fifth, "8n", time + Tone.Time("4n + 8n").toSeconds(), 0.2);
         }
+
+        // Phrase-based Melody Generation
+        if (Math.random() > 0.3) {
+            const melodyNotes = chordNotes.map(n => n.replace(/[34]/, '5'));
+            const motifLength = Math.floor(Math.random() * 3) + 1; // 1 to 3 notes
+            
+            for (let i = 0; i < motifLength; i++) {
+                const note = melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+                const offset = Tone.Time("4n").toSeconds() * i;
+                lead.triggerAttackRelease(note, "4n", time + offset, 0.2);
+            }
+        }
+
     }, "1n").start(0);
-    Tone.Transport.bpm.value = 80; Tone.Transport.swing = 0.3;
+
+    Tone.Transport.bpm.value = 82; 
+    Tone.Transport.swing = 0.4;
 }
 
 // UI Handlers
