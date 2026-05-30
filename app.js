@@ -14,7 +14,7 @@ const ctx = canvas.getContext('2d');
 const body = document.body;
 
 // Constants
-const NICE_VOLUME = -2; // Fixed volume level (in dB)
+const NICE_VOLUME = -12; // Lowered from -2dB to -12dB for better comfort
 
 // Audio Nodes
 let limiter, compressor, mainVol, analyser, reverb, delay;
