@@ -125,6 +125,52 @@ body.playing .ui-overlay:hover #start-stop {
     background: rgba(0, 0, 0, 0.4);
 }
 
+/* --- VERSION INFO --- */
+.version-info {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 10000;
+    cursor: help;
+}
+
+.v-label {
+    font-size: 0.65rem;
+    font-family: var(--font-main);
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+}
+
+.version-info:hover .v-label {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.v-tooltip {
+    position: absolute;
+    bottom: 25px;
+    left: 0;
+    width: 240px;
+    background: rgba(10, 12, 16, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.7rem;
+    line-height: 1.4;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.version-info:hover .v-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .volume-control {
     display: flex;
     flex-direction: column;
