@@ -8,11 +8,13 @@ let initialized = false;
 
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
-const volumeSlider = document.getElementById('volume');
 const canvas = document.getElementById('visualizer-canvas');
 const staggerBg = document.getElementById('stagger-bg');
 const ctx = canvas.getContext('2d');
 const body = document.body;
+
+// Constants
+const NICE_VOLUME = -2; // Fixed volume level (in dB)
 
 // Audio Nodes
 let limiter, compressor, mainVol, analyser, reverb, delay;
@@ -247,10 +249,9 @@ startStopBtn.addEventListener('click', async () => {
             await Tone.start(); // Ensure context is resumed
             Tone.Transport.start();
             
-            const targetVol = volumeSlider ? parseFloat(volumeSlider.value) : -6;
             if (mainVol) {
                 mainVol.volume.value = -Infinity;
-                mainVol.volume.rampTo(targetVol, 0.4);
+                mainVol.volume.rampTo(NICE_VOLUME, 0.4);
             }
             
             body.classList.add('playing');
@@ -261,10 +262,6 @@ startStopBtn.addEventListener('click', async () => {
         console.error("Click handler error:", err);
         startStopBtn.innerText = "Error: " + (err.message || "Failed to start");
     }
-});
-
-volumeSlider.addEventListener('input', (e) => {
-    if (mainVol) mainVol.volume.rampTo(parseFloat(e.target.value), 0.05);
 });
 
 window.addEventListener('resize', () => {
