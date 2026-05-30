@@ -15,6 +15,25 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
+const APP_VERSION = "1.1.3";
+
+/**
+ * Auto-Update Feature
+ * Polls version.json and reloads if a new version is detected.
+ */
+function initAutoUpdater() {
+    setInterval(async () => {
+        try {
+            const response = await fetch(`version.json?t=${Date.now()}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data.version && data.version !== APP_VERSION) {
+                window.location.reload();
+            }
+        } catch (e) {}
+    }, 60000);
+}
+initAutoUpdater();
 
 // Audio Nodes
 let limiter, compressor, mainVol, analyser, reverb, delay;
