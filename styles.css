@@ -90,17 +90,23 @@ body {
 .btn-zen {
     pointer-events: auto;
     background: rgba(255, 255, 255, 0.03);
-    color: white;
+    color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.1);
     
-    /* Perfect Circle */
-    width: clamp(80px, 15vh, 120px);
-    height: clamp(80px, 15vh, 120px);
+    /* Responsive Circle */
+    width: clamp(120px, 20vh, 180px);
+    height: clamp(120px, 20vh, 180px);
     border-radius: 50%;
     
     display: flex;
     justify-content: center;
     align-items: center;
+    
+    /* Bigger Text */
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
     
     cursor: pointer;
     transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
@@ -109,40 +115,12 @@ body {
 }
 
 .btn-zen:hover {
+    color: white;
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.4);
     transform: scale(1.1);
+    letter-spacing: 0.3em;
 }
-
-/* Play Icon (Triangle) */
-.icon-play {
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 15px 0 15px 26px;
-    border-color: transparent transparent transparent rgba(255, 255, 255, 0.6);
-    margin-left: 8px; /* Offset to center triangle visually */
-    transition: all 0.3s ease;
-}
-
-/* Stop Icon (Square) */
-.icon-stop {
-    display: none;
-    width: 24px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.btn-zen:hover .icon-play, 
-.btn-zen:hover .icon-stop {
-    border-left-color: white;
-    background: white;
-}
-
-body.playing .icon-play { display: none; }
-body.playing .icon-stop { display: block; }
 
 body.playing .btn-zen {
     opacity: 0;
@@ -150,6 +128,7 @@ body.playing .btn-zen {
 
 body.playing .ui-overlay:hover .btn-zen {
     opacity: 1;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .volume-control {

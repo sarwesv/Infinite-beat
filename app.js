@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.3";
+const APP_VERSION = "1.1.4";
 
 /**
  * Auto-Update Feature
@@ -336,7 +336,7 @@ startStopBtn.addEventListener('click', async () => {
             setTimeout(() => {
                 Tone.Transport.pause();
                 body.classList.remove('playing');
-                startStopBtn.innerText = "Start Music";
+                startStopBtn.innerText = "START";
             }, 150);
         } else {
             // FADE IN
@@ -349,7 +349,7 @@ startStopBtn.addEventListener('click', async () => {
             }
             
             body.classList.add('playing');
-            startStopBtn.innerText = "Stop Music";
+            startStopBtn.innerText = "STOP";
         }
         isPlaying = !isPlaying;
     } catch (err) {
