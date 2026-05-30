@@ -8,12 +8,13 @@ let initialized = false;
 
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
-const volumeSlider = document.getElementById('volume');
-const dbDisplay = document.getElementById('db-value');
 const canvas = document.getElementById('visualizer-canvas');
 const staggerBg = document.getElementById('stagger-bg');
 const ctx = canvas.getContext('2d');
 const body = document.body;
+
+// Constants
+const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
 
 // Audio Nodes
 let limiter, compressor, mainVol, analyser, reverb, delay;
@@ -39,9 +40,8 @@ async function initAudio() {
             release: 0.1
         }).connect(limiter);
         
-        // Start at slider value
-        const startDb = volumeSlider ? parseFloat(volumeSlider.value) : -20;
-        mainVol = new Tone.Volume(startDb).connect(compressor);
+        // Start at the calibrated nice volume
+        mainVol = new Tone.Volume(NICE_VOLUME).connect(compressor);
         analyser = new Tone.Analyser("fft", 32);
         mainVol.connect(analyser);
 
@@ -251,9 +251,8 @@ startStopBtn.addEventListener('click', async () => {
             Tone.Transport.start();
             
             if (mainVol) {
-                const targetDb = volumeSlider ? parseFloat(volumeSlider.value) : -20;
                 mainVol.volume.value = -Infinity;
-                mainVol.volume.rampTo(targetDb, 0.4);
+                mainVol.volume.rampTo(NICE_VOLUME, 0.4);
             }
             
             body.classList.add('playing');
@@ -264,12 +263,6 @@ startStopBtn.addEventListener('click', async () => {
         console.error("Click handler error:", err);
         startStopBtn.innerText = "Error: " + (err.message || "Failed to start");
     }
-});
-
-volumeSlider.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    if (mainVol) mainVol.volume.rampTo(val, 0.05);
-    if (dbDisplay) dbDisplay.innerText = val;
 });
 
 window.addEventListener('resize', () => {
