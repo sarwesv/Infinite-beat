@@ -7,9 +7,8 @@ A fully immersive, generative music tool designed for deep focus and relaxation.
 
 ## ✨ New Features
 
-- **Dual Interactive Visualizers:**
+- **Interactive Visualizer:**
   - **LEGO 3D Carousel:** A depth-sorted, rotating isometric scene made of smooth-topped bricks that dance to the frequencies.
-  - **Realistic Lava Lamp:** A gooey, multi-blob system inspired by classic retro lamps, featuring fluid morphing and bass-driven reactivity.
 - **Enhanced Generative Band:**
   - **Plucked Bass Guitar:** A rhythmic, high-visibility bassline with realistic string character.
   - **Full Percussion:** Standard Boom Bap drums mixed with crisp rimshots and shakers.
@@ -32,7 +31,7 @@ A fully immersive, generative music tool designed for deep focus and relaxation.
    Simply open `index.html` in any modern web browser.
 
 3. **Start the Vibes:**
-   Click the **"Start Music"** button and use the switcher to toggle between LEGO and LAVA modes.
+   Click the **"Start Music"** button and enjoy the LEGO visualizer.
 
 ## 🛠️ Built With
 
