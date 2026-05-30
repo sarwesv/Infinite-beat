@@ -169,16 +169,31 @@ function startLegoVisualizer() {
             canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
         }
         ctx.clearRect(0, 0, w, h);
-        if (!isPlaying) return;
+        
+        // Keep rotating slowly even when paused
         rotationAngle += 0.007;
-        const fftData = analyser.getValue();
+
+        // If not playing, use a silent array to slide bars down
+        const fftData = (initialized && isPlaying) ? analyser.getValue() : new Float32Array(32).fill(-100);
+        
         const centerX = w / 2; const centerY = h / 2;
         let bricks = [];
         for (let i = 0; i < fftData.length; i++) {
-            const rawVal = (fftData[i] + 100); const target = Math.max(12, rawVal * (h / 350)); barHeights[i] += (target - barHeights[i]) * 0.12;
-            const radius = Math.min(w, h) * 0.45; const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            const x = centerX + Math.cos(brickAngle) * radius; const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
-            let color = "#2563eb"; if (i < 6) color = "#dc2626"; if (i > 22) color = "#facc15";
+            const rawVal = (fftData[i] + 100); 
+            const target = Math.max(12, rawVal * (h / 350)); 
+            
+            // Interpolate towards the target (will be 12 when silent)
+            barHeights[i] += (target - barHeights[i]) * 0.12;
+            
+            const radius = Math.min(w, h) * 0.45; 
+            const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
+            const x = centerX + Math.cos(brickAngle) * radius; 
+            const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
+            
+            let color = "#2563eb"; 
+            if (i < 6) color = "#dc2626"; 
+            if (i > 22) color = "#facc15";
+            
             bricks.push({ x, y, h: barHeights[i], color });
         }
         bricks.sort((a, b) => a.y - b.y);
