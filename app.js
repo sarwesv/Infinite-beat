@@ -41,7 +41,7 @@ async function initAudio() {
             release: 0.1
         }).connect(limiter);
         
-        mainVol = new Tone.Volume(-Infinity).connect(compressor);
+        mainVol = new Tone.Volume(NICE_VOLUME).connect(compressor);
         analyser = new Tone.Analyser("fft", 32);
         mainVol.connect(analyser);
 
@@ -49,40 +49,40 @@ async function initAudio() {
         delay = new Tone.FeedbackDelay("8n.", 0.2).connect(reverb);
 
         rain = new Tone.Noise("pink");
-        rain.volume.value = -38;
+        rain.volume.value = -48; // Lowered from -38
         const rainFilter = new Tone.AutoFilter({ frequency: "8n", baseFrequency: 300, octaves: 1.5 }).connect(mainVol).start();
         rain.connect(rainFilter);
         rain.start();
 
         vinyl = new Tone.Noise("brown");
-        vinyl.volume.value = -45;
+        vinyl.volume.value = -55; // Lowered from -45
         vinyl.connect(mainVol);
         vinyl.start();
 
         kick = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.4, sustain: 0.01 }}).connect(mainVol);
-        kick.volume.value = -2;
+        kick.volume.value = -12; // Lowered from -2
 
         snare = new Tone.NoiseSynth({ envelope: { attack: 0.005, decay: 0.1, sustain: 0 }}).connect(mainVol);
-        snare.volume.value = -12;
+        snare.volume.value = -22; // Lowered from -12
 
         hihat = new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.005, decay: 0.1, release: 0.05 }, harmonicity: 3, modulationIndex: 16, resonance: 2000, octaves: 1 }).connect(mainVol);
-        hihat.volume.value = -28;
+        hihat.volume.value = -38; // Lowered from -28
 
         shaker = new Tone.NoiseSynth({ envelope: { attack: 0.01, decay: 0.05, sustain: 0 }}).connect(mainVol);
-        shaker.volume.value = -32;
+        shaker.volume.value = -42; // Lowered from -32
 
         const bassDist = new Tone.Distortion(0.05).connect(mainVol);
         bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 120, octaves: 2 }}).connect(bassDist);
-        bass.volume.value = +4;
+        bass.volume.value = -6; // Lowered from +4
 
         keys = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1 }}).connect(delay);
-        keys.volume.value = -18;
+        keys.volume.value = -28; // Lowered from -18
 
         pad = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 }}).connect(reverb);
-        pad.volume.value = -28;
+        pad.volume.value = -38; // Lowered from -28
 
         lead = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.5, decay: 0.2, sustain: 0.5, release: 2 }}).connect(delay);
-        lead.volume.value = -22;
+        lead.volume.value = -32; // Lowered from -22
 
         setupLoop();
         startLegoVisualizer();
@@ -251,8 +251,8 @@ startStopBtn.addEventListener('click', async () => {
             Tone.Transport.start();
             
             if (mainVol) {
-                mainVol.volume.value = -Infinity;
-                mainVol.volume.rampTo(NICE_VOLUME, 0.4);
+                // Set explicitly and don't ramp to avoid caching/logic issues
+                mainVol.volume.value = NICE_VOLUME;
             }
             
             body.classList.add('playing');
