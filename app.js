@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.6";
+const APP_VERSION = "1.1.7";
 
 /**
  * Auto-Update Feature
@@ -189,15 +189,14 @@ function startLegoVisualizer() {
     function render() {
         requestAnimationFrame(render);
         
-        // Use client dimensions for more accurate centering
         const dpr = window.devicePixelRatio || 1;
-        const w = canvas.clientWidth;
-        const h = canvas.clientHeight;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         
         if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
             canvas.width = w * dpr; 
             canvas.height = h * dpr; 
-            ctx.scale(dpr, dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         
         ctx.clearRect(0, 0, w, h);
@@ -212,15 +211,13 @@ function startLegoVisualizer() {
         const centerY = h / 2; 
         
         let bricks = [];
-        // Refined radius logic to ensure it's always centered and fits the screen
         const radiusX = Math.min(w * 0.42, h * 0.8); 
-        const radiusY = radiusX * 0.35; // Standard isometric perspective
+        const radiusY = radiusX * 0.35; 
 
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100); 
             const target = Math.max(12, rawVal * (h / 350)); 
             
-            // Interpolate towards the target
             barHeights[i] += (target - barHeights[i]) * 0.12;
             
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
