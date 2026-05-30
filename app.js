@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.4";
+const APP_VERSION = "1.1.5";
 
 /**
  * Auto-Update Feature
@@ -202,19 +202,25 @@ function startLegoVisualizer() {
         // If not playing, use a silent array to slide bars down
         const fftData = (initialized && isPlaying) ? analyser.getValue() : new Float32Array(32).fill(-100);
         
-        const centerX = w / 2; const centerY = h / 2;
+        const centerX = w / 2; 
+        // Offset centerY slightly DOWN to center the "mass" of the bricks
+        const centerY = (h / 2) + 40; 
+        
         let bricks = [];
+        // Use a consistent radius calculation
+        const radiusX = Math.min(w, h) * 0.42; 
+        const radiusY = radiusX * 0.35; // Perspective factor
+
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100); 
             const target = Math.max(12, rawVal * (h / 350)); 
             
-            // Interpolate towards the target (will be 12 when silent)
+            // Interpolate towards the target
             barHeights[i] += (target - barHeights[i]) * 0.12;
             
-            const radius = Math.min(w, h) * 0.45; 
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
-            const x = centerX + Math.cos(brickAngle) * radius; 
-            const y = centerY + Math.sin(brickAngle) * (radius * 0.35);
+            const x = centerX + Math.cos(brickAngle) * radiusX; 
+            const y = centerY + Math.sin(brickAngle) * radiusY;
             
             let color = "#2563eb"; 
             if (i < 6) color = "#dc2626"; 
