@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.8";
+const APP_VERSION = "1.1.9";
 
 /**
  * Auto-Update Feature
@@ -41,7 +41,7 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 // Visualizer State
 let barHeights = new Array(32).fill(0);
-let brickScales = new Array(32).fill(0); 
+let brickScales = new Array(32).fill(1); 
 let rotationAngle = 0;
 
 /**
@@ -360,15 +360,16 @@ startStopBtn.addEventListener('click', async () => {
             }
             
             // LEGO BUILD ENTRANCE ANIMATION
+            // First reset scales to 0
+            brickScales.fill(0);
+            
+            // Then stagger them back to 1
             anime({
                 targets: brickScales,
-                0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 
-                8: 1, 9: 1, 10: 1, 11: 1, 12: 1, 13: 1, 14: 1, 15: 1,
-                16: 1, 17: 1, 18: 1, 19: 1, 20: 1, 21: 1, 22: 1, 23: 1,
-                24: 1, 25: 1, 26: 1, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1,
-                delay: anime.stagger(40),
-                duration: 800,
-                easing: 'easeOutElastic(1, .6)'
+                ...Array.from({length: 32}, (_, i) => ({ [i]: 1 })).reduce((acc, curr) => ({...acc, ...curr}), {}),
+                delay: anime.stagger(30),
+                duration: 900,
+                easing: 'easeOutElastic(1, .8)'
             });
             
             body.classList.add('playing');
