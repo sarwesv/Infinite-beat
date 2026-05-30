@@ -247,7 +247,7 @@ startStopBtn.addEventListener('click', async () => {
             await Tone.start(); // Ensure context is resumed
             Tone.Transport.start();
             
-            const targetVol = volumeSlider ? parseFloat(volumeSlider.value) : -12;
+            const targetVol = volumeSlider ? parseFloat(volumeSlider.value) : -6;
             if (mainVol) {
                 mainVol.volume.value = -Infinity;
                 mainVol.volume.rampTo(targetVol, 0.4);
