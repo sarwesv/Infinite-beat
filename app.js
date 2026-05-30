@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.1.7";
+const APP_VERSION = "1.1.8";
 
 /**
  * Auto-Update Feature
@@ -41,6 +41,7 @@ let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
 
 // Visualizer State
 let barHeights = new Array(32).fill(0);
+let brickScales = new Array(32).fill(0); 
 let rotationAngle = 0;
 
 /**
@@ -217,21 +218,23 @@ function startLegoVisualizer() {
         for (let i = 0; i < fftData.length; i++) {
             const rawVal = (fftData[i] + 100); 
             const target = Math.max(12, rawVal * (h / 350)); 
-            
+            // Interpolate towards the target
             barHeights[i] += (target - barHeights[i]) * 0.12;
-            
+
             const brickAngle = (i / fftData.length) * Math.PI * 2 + rotationAngle;
             const x = centerX + Math.cos(brickAngle) * radiusX; 
             const y = centerY + Math.sin(brickAngle) * radiusY;
-            
+
             let color = "#2563eb"; 
             if (i < 6) color = "#dc2626"; 
             if (i > 22) color = "#facc15";
-            
-            bricks.push({ x, y, h: barHeights[i], color });
-        }
-        bricks.sort((a, b) => a.y - b.y);
-        bricks.forEach(b => drawLegoBrick(b.x, b.y, 16, b.h, b.color));
+
+            // Multiply height and size by individual brick scale
+            bricks.push({ x, y, h: barHeights[i] * brickScales[i], size: 16 * brickScales[i], color });
+            }
+            bricks.sort((a, b) => a.y - b.y);
+            bricks.forEach(b => drawLegoBrick(b.x, b.y, b.size, b.h, b.color));
+
     }
     render();
 }
@@ -355,6 +358,18 @@ startStopBtn.addEventListener('click', async () => {
                 mainVol.volume.value = -Infinity;
                 mainVol.volume.rampTo(NICE_VOLUME, 0.4);
             }
+            
+            // LEGO BUILD ENTRANCE ANIMATION
+            anime({
+                targets: brickScales,
+                0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 
+                8: 1, 9: 1, 10: 1, 11: 1, 12: 1, 13: 1, 14: 1, 15: 1,
+                16: 1, 17: 1, 18: 1, 19: 1, 20: 1, 21: 1, 22: 1, 23: 1,
+                24: 1, 25: 1, 26: 1, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1,
+                delay: anime.stagger(40),
+                duration: 800,
+                easing: 'easeOutElastic(1, .6)'
+            });
             
             body.classList.add('playing');
             startStopBtn.innerText = "STOP";
