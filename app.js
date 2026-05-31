@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.2.2";
 
 /**
  * Auto-Update Feature
@@ -109,12 +109,12 @@ async function initAudio() {
         pad.volume.value = -28;
 
         lead = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.5, decay: 0.2, sustain: 0.5, release: 2 }}).connect(delay);
-        lead.volume.value = -22;
+        lead.volume.value = -32;
 
         setupLoop();
-        startLegoVisualizer();
         initialized = true;
-    } catch (e) {
+        } catch (e) {
+
         console.error("Initialization failed", e);
     }
 }
@@ -361,14 +361,15 @@ startStopBtn.addEventListener('click', async () => {
             }
             
             // SIMPLE ENTRANCE ANIMATION
+            const animObj = { s: 0 };
             globalScale = 0;
             anime({
-                targets: {s: 0},
+                targets: animObj,
                 s: 1,
-                duration: 1000,
+                duration: 1200,
                 easing: 'easeOutElastic(1, .8)',
-                update: (anim) => {
-                    globalScale = anim.animations[0].currentValue;
+                update: () => {
+                    globalScale = animObj.s;
                 }
             });
             
@@ -385,3 +386,6 @@ startStopBtn.addEventListener('click', async () => {
 window.addEventListener('resize', () => {
     if (initialized) createStaggerGrid();
 });
+
+// Start visualizer immediately so it's visible on page load
+startLegoVisualizer();
