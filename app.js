@@ -15,7 +15,32 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.6";
+const APP_VERSION = "1.2.7";
+
+/**
+ * Panic Stop
+ * Ensures all sound sources are immediately silenced to prevent hanging notes.
+ */
+function panicStop() {
+    // Stop generative loops
+    Tone.Transport.stop();
+    Tone.Transport.cancel(); // Clear any pending notes
+
+    // Release all active synth voices
+    if (keys && keys.releaseAll) keys.releaseAll();
+    if (pad && pad.releaseAll) pad.releaseAll();
+    if (bass && bass.triggerRelease) bass.triggerRelease();
+    if (lead && lead.triggerRelease) lead.triggerRelease();
+
+    // Release percussive envelopes
+    [kick, snare, hihat, shaker].forEach(s => {
+        if (s && s.triggerRelease) s.triggerRelease();
+    });
+
+    // Stop continuous noise/textures
+    if (rain) rain.stop();
+    if (vinyl) vinyl.stop();
+}
 
 /**
  * High-Resiliency Background Persistence
@@ -411,21 +436,25 @@ startStopBtn.addEventListener('click', async () => {
 
         if (isPlaying) {
             // FADE OUT
-            if (mainVol) mainVol.volume.rampTo(-Infinity, 0.15);
+            if (mainVol) mainVol.volume.rampTo(-Infinity, 0.1);
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
             if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
             if (silentAnchor) silentAnchor.pause();
             
             setTimeout(() => {
-                Tone.Transport.pause();
+                panicStop(); // KILL ALL AUDIO
                 body.classList.remove('playing');
                 startStopBtn.innerText = "START";
-            }, 150);
+            }, 110);
         } else {
             // FADE IN
             await Tone.start(); // Ensure context is resumed
             Tone.Transport.start();
             
+            // Restart noise if stopped
+            if (rain && rain.state !== "started") rain.start();
+            if (vinyl && vinyl.state !== "started") vinyl.start();
+
             // Background persistence
             initSilentAnchor();
             silentAnchor.play().catch(e => console.error("Silent anchor failed", e));
