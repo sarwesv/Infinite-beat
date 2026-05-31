@@ -15,14 +15,35 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.5";
+const APP_VERSION = "1.2.6";
 
 /**
- * Advanced Background Persistence
- * Handles visibility changes and forced recovery for mobile standby.
+ * High-Resiliency Background Persistence
+ * Specifically tuned for iPadOS multitasking and standby.
  */
 let wakeLock = null;
 let silentAnchor = null;
+
+// Re-request lock and force-resume context if suspended
+document.addEventListener('visibilitychange', () => {
+    if (isPlaying) {
+        if (document.visibilityState === 'visible') {
+            requestWakeLock();
+        }
+        // Force context resume regardless of visibility to fight OS suspension
+        if (Tone.context.state !== 'running') {
+            Tone.context.resume().catch(e => {});
+        }
+    }
+});
+
+// Context Keeper: Pings the audio context every 2 seconds to keep the thread alive
+setInterval(() => {
+    if (isPlaying && Tone.context.state !== 'running') {
+        Tone.context.resume().catch(e => {});
+        if (silentAnchor && silentAnchor.paused) silentAnchor.play().catch(e => {});
+    }
+}, 2000);
 
 async function requestWakeLock() {
     if ('wakeLock' in navigator && isPlaying) {
@@ -33,21 +54,13 @@ async function requestWakeLock() {
     }
 }
 
-// Re-request lock if visibility returns
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && isPlaying) {
-        requestWakeLock();
-        if (Tone.context.state !== 'running') Tone.context.resume();
-    }
-});
-
 function initSilentAnchor() {
     if (!silentAnchor) {
         silentAnchor = document.createElement('audio');
         silentAnchor.loop = true;
-        silentAnchor.playsInline = true; // Critical for iOS
-        silentAnchor.muted = false;
-        // 1-second silent WAV
+        silentAnchor.playsInline = true; 
+        silentAnchor.setAttribute('muted', 'false'); // Some iOS versions need this explicit string
+        // 5-second high-quality silent WAV to better signal "Active Media" to iPadOS
         silentAnchor.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
         document.body.appendChild(silentAnchor);
     }
