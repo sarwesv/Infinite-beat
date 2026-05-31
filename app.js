@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.2.1";
 
 /**
  * Auto-Update Feature
