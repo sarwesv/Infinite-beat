@@ -15,13 +15,24 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.3";
+const APP_VERSION = "1.2.4";
 
 /**
  * Background Persistence Logic
- * Signals to the OS that this is an active media player to prevent standby suspension.
+ * Uses a silent audio loop to "anchor" the process in the background.
  */
 let wakeLock = null;
+let silentAnchor = null;
+
+function initSilentAnchor() {
+    if (!silentAnchor) {
+        silentAnchor = document.createElement('audio');
+        silentAnchor.loop = true;
+        // 1-second silent WAV file (base64)
+        silentAnchor.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+        document.body.appendChild(silentAnchor);
+    }
+}
 
 async function requestWakeLock() {
     if ('wakeLock' in navigator) {
@@ -36,17 +47,16 @@ function setupMediaSession() {
         navigator.mediaSession.metadata = new MediaMetadata({
             title: 'Infinite Lo-Fi Beats',
             artist: 'Generative Band',
-            album: 'Deep Focus Session',
+            album: 'Background Persistence Active',
             artwork: [
                 { src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23020617%22/><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>', sizes: '96x96', type: 'image/svg+xml' }
             ]
         });
 
-        navigator.mediaSession.setActionHandler('play', () => startStopBtn.click());
-        navigator.mediaSession.setActionHandler('pause', () => startStopBtn.click());
-        navigator.mediaSession.setActionHandler('stop', () => {
-            if (isPlaying) startStopBtn.click();
-        });
+        // Map lock-screen controls to our START button
+        const toggle = () => startStopBtn.click();
+        navigator.mediaSession.setActionHandler('play', toggle);
+        navigator.mediaSession.setActionHandler('pause', toggle);
     }
 }
 
@@ -380,6 +390,7 @@ startStopBtn.addEventListener('click', async () => {
             if (mainVol) mainVol.volume.rampTo(-Infinity, 0.15);
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
             if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
+            if (silentAnchor) silentAnchor.pause();
             
             setTimeout(() => {
                 Tone.Transport.pause();
@@ -392,6 +403,9 @@ startStopBtn.addEventListener('click', async () => {
             Tone.Transport.start();
             
             // Background persistence
+            initSilentAnchor();
+            silentAnchor.play().catch(e => console.error("Silent anchor failed", e));
+            
             setupMediaSession();
             requestWakeLock();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
