@@ -15,30 +15,41 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.4";
+const APP_VERSION = "1.2.5";
 
 /**
- * Background Persistence Logic
- * Uses a silent audio loop to "anchor" the process in the background.
+ * Advanced Background Persistence
+ * Handles visibility changes and forced recovery for mobile standby.
  */
 let wakeLock = null;
 let silentAnchor = null;
+
+async function requestWakeLock() {
+    if ('wakeLock' in navigator && isPlaying) {
+        try {
+            if (wakeLock) await wakeLock.release();
+            wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) {}
+    }
+}
+
+// Re-request lock if visibility returns
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && isPlaying) {
+        requestWakeLock();
+        if (Tone.context.state !== 'running') Tone.context.resume();
+    }
+});
 
 function initSilentAnchor() {
     if (!silentAnchor) {
         silentAnchor = document.createElement('audio');
         silentAnchor.loop = true;
-        // 1-second silent WAV file (base64)
+        silentAnchor.playsInline = true; // Critical for iOS
+        silentAnchor.muted = false;
+        // 1-second silent WAV
         silentAnchor.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
         document.body.appendChild(silentAnchor);
-    }
-}
-
-async function requestWakeLock() {
-    if ('wakeLock' in navigator) {
-        try {
-            wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {}
     }
 }
 
