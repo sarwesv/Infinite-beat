@@ -15,7 +15,40 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.2";
+const APP_VERSION = "1.2.3";
+
+/**
+ * Background Persistence Logic
+ * Signals to the OS that this is an active media player to prevent standby suspension.
+ */
+let wakeLock = null;
+
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) {}
+    }
+}
+
+function setupMediaSession() {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: 'Infinite Lo-Fi Beats',
+            artist: 'Generative Band',
+            album: 'Deep Focus Session',
+            artwork: [
+                { src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23020617%22/><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>', sizes: '96x96', type: 'image/svg+xml' }
+            ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => startStopBtn.click());
+        navigator.mediaSession.setActionHandler('pause', () => startStopBtn.click());
+        navigator.mediaSession.setActionHandler('stop', () => {
+            if (isPlaying) startStopBtn.click();
+        });
+    }
+}
 
 /**
  * Auto-Update Feature
@@ -345,6 +378,9 @@ startStopBtn.addEventListener('click', async () => {
         if (isPlaying) {
             // FADE OUT
             if (mainVol) mainVol.volume.rampTo(-Infinity, 0.15);
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
+            if (wakeLock) { wakeLock.release().then(() => wakeLock = null); }
+            
             setTimeout(() => {
                 Tone.Transport.pause();
                 body.classList.remove('playing');
@@ -355,6 +391,11 @@ startStopBtn.addEventListener('click', async () => {
             await Tone.start(); // Ensure context is resumed
             Tone.Transport.start();
             
+            // Background persistence
+            setupMediaSession();
+            requestWakeLock();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+
             if (mainVol) {
                 mainVol.volume.value = -Infinity;
                 mainVol.volume.rampTo(NICE_VOLUME, 0.4);
