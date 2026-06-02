@@ -14,8 +14,9 @@ const ctx = canvas.getContext('2d');
 const body = document.body;
 
 // Constants
-const NICE_VOLUME = -18; // Locked at the user-calibrated "nice" volume
-const APP_VERSION = "1.2.8";
+const NICE_VOLUME = -11; // Increased for better speaker presence
+const APP_VERSION = "1.3.0";
+console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
  * Panic Stop
@@ -83,14 +84,9 @@ function initSilentAnchor() {
         silentAnchor = document.createElement('audio');
         silentAnchor.loop = true;
         silentAnchor.playsInline = true;
-        silentAnchor.setAttribute('muted', 'false');
         
-        // Robust iOS Hack: Pipe Tone.js output to a MediaStreamDestination 
-        // and feed it to an invisible <audio> element. 
-        // This ensures the OS treats generative audio as active background media.
-        const dest = Tone.context.createMediaStreamDestination();
-        Tone.getDestination().connect(dest);
-        silentAnchor.srcObject = dest.stream;
+        // 1-second silent MP3 (industry standard hack for iOS background persistence)
+        silentAnchor.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//MUZAAAAAAAAAAAAAAAAAAAAAAAAMUFEWloAAAAGAAAD8P//f7gAAAAAAAAAAAAAAAD/84SAs8AAAaA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUZAs6AAAbA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OEAs8AAAaA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUZAs6AAAbA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         
         document.body.appendChild(silentAnchor);
     }
@@ -149,10 +145,10 @@ async function initAudio() {
         await Tone.start();
         createStaggerGrid();
         
-        limiter = new Tone.Limiter(-1).toDestination();
+        limiter = new Tone.Limiter(-0.5).toDestination();
         compressor = new Tone.Compressor({
-            threshold: -18,
-            ratio: 3,
+            threshold: -14,
+            ratio: 4,
             attack: 0.01,
             release: 0.1
         }).connect(limiter);
@@ -194,12 +190,12 @@ async function initAudio() {
         shaker = new Tone.NoiseSynth({ envelope: { attack: 0.01, decay: 0.05, sustain: 0 }}).connect(mainVol);
         shaker.volume.value = -32;
 
-        const bassDist = new Tone.Distortion(0.05).connect(mainVol);
+        const bassDist = new Tone.Distortion(0.08).connect(mainVol);
         bass = new Tone.MonoSynth({ oscillator: { type: "triangle" }, envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 0.8 }, filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.1, baseFrequency: 120, octaves: 2 }}).connect(bassDist);
-        bass.volume.value = -6;
+        bass.volume.value = -4;
 
         keys = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 0.2, decay: 0.4, sustain: 0.3, release: 1 }}).connect(vibrato);
-        keys.volume.value = -18;
+        keys.volume.value = -14;
 
 
         pad = new Tone.PolySynth(Tone.Synth, { maxPolyphony: 4, oscillator: { type: "sine" }, envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 }}).connect(reverb);
@@ -440,6 +436,7 @@ startStopBtn.addEventListener('click', async () => {
         }
 
         if (isPlaying) {
+            isPlaying = false; // Set early to prevent race conditions
             // FADE OUT
             if (mainVol) mainVol.volume.rampTo(-Infinity, 0.1);
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
@@ -447,13 +444,17 @@ startStopBtn.addEventListener('click', async () => {
             if (silentAnchor) silentAnchor.pause();
             
             setTimeout(() => {
-                panicStop(); // KILL ALL AUDIO
-                body.classList.remove('playing');
-                startStopBtn.innerText = "START";
+                if (!isPlaying) { // Final check before killing audio
+                    panicStop();
+                    body.classList.remove('playing');
+                    startStopBtn.innerText = "START";
+                }
             }, 110);
         } else {
+            isPlaying = true;
             // FADE IN
-            await Tone.start(); // Ensure context is resumed
+            await Tone.start();
+            Tone.Transport.seconds = 0; // Reset timeline
             Tone.Transport.start();
             
             // Restart noise if stopped

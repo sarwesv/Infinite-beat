@@ -15,12 +15,12 @@
 ## Conventions
 - **Version Control:** Follow the versioning scheme in `version.json` and `APP_VERSION` in `app.js`. Update both when making significant changes.
 - **Audio:**
-  - Use `panicStop()` to silence all audio sources.
-  - Tone.js nodes should be connected through `mainVol` which connects to `analyser` and then `compressor` -> `limiter` -> `Destination`.
-  - Background persistence is critical (iPadOS support); see `silentAnchor` and `requestWakeLock`.
+  - Use `panicStop()` to silence all audio sources (without cancelling sequences).
+  - Tone.js nodes should be connected through `mainVol` (calibrated at -11dB for speakers).
+  - Background persistence uses a silent MP3 anchor to prevent mobile OS suspension.
 - **Visuals:**
   - `drawLegoBrick` is the primitive for the visualizer.
-  - Visualizer should be responsive and handle device pixel ratio (DPR).
+  - Visualizer handles device pixel ratio (DPR) and uses Anime.js for smooth scaling.
 - **Styling:**
   - Use CSS variables defined in `:root`.
   - Maintain the glassmorphism aesthetic.
