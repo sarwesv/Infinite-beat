@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.3.1";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -490,7 +490,6 @@ startStopBtn.addEventListener('click', async () => {
             body.classList.add('playing');
             startStopBtn.innerText = "STOP";
         }
-        isPlaying = !isPlaying;
     } catch (err) {
         console.error("Click handler error:", err);
         startStopBtn.innerText = "Error: " + (err.message || "Failed to start");
