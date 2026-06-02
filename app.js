@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.3.2";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -97,16 +97,22 @@ function setupMediaSession() {
         navigator.mediaSession.metadata = new MediaMetadata({
             title: 'Infinite Lo-Fi Beats',
             artist: 'Generative Band',
-            album: 'Background Persistence Active',
+            album: 'Atmospheric Lo-Fi',
             artwork: [
-                { src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23020617%22/><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>', sizes: '96x96', type: 'image/svg+xml' }
+                { src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23020617%22/><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>', sizes: '512x512', type: 'image/svg+xml' }
             ]
         });
 
-        // Map lock-screen controls to our START button
-        const toggle = () => startStopBtn.click();
-        navigator.mediaSession.setActionHandler('play', toggle);
-        navigator.mediaSession.setActionHandler('pause', toggle);
+        // Map lock-screen and hardware controls to our engine
+        navigator.mediaSession.setActionHandler('play', () => {
+            if (!isPlaying) startStopBtn.click();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+            if (isPlaying) startStopBtn.click();
+        });
+        navigator.mediaSession.setActionHandler('stop', () => {
+            if (isPlaying) startStopBtn.click();
+        });
     }
 }
 
