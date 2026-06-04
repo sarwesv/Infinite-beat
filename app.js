@@ -16,7 +16,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.4.3";
+const APP_VERSION = "1.4.4";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -144,6 +144,7 @@ initAutoUpdater();
 // Audio Nodes
 let limiter, compressor, mainVol, analyser, reverb, delay;
 let kick, snare, hihat, shaker, bass, keys, pad, lead, rain, vinyl;
+let drumSeq, musicLoop; // Global sequences to prevent double-starting
 
 // Visualizer State
 let barHeights = new Array(32).fill(12);
@@ -154,6 +155,7 @@ let rotationAngle = 0;
  * Initialize Audio Engine
  */
 async function initAudio() {
+    console.count("initAudio called");
     try {
         await Tone.start();
         createStaggerGrid();
@@ -350,8 +352,15 @@ function startLegoVisualizer() {
  * Generative Music Loop
  */
 function setupLoop() {
+    console.count("setupLoop called");
+    console.log("Setting up music loops...");
+    
+    // Dispose existing to prevent "double beats"
+    if (drumSeq) drumSeq.dispose();
+    if (musicLoop) musicLoop.dispose();
+
     // Advanced Drum Patterns (Ghost notes and variation)
-    const drumSeq = new Tone.Sequence((time, hit) => {
+    drumSeq = new Tone.Sequence((time, hit) => {
         if (hit === "K") kick.triggerAttackRelease("C1", "8n", time);
         if (hit === "S") snare.triggerAttackRelease("16n", time);
         if (hit === "H") hihat.triggerAttackRelease("32n", time, 0.4);
@@ -387,7 +396,7 @@ function setupLoop() {
     let currentProgression = progressions[Math.floor(Math.random() * progressions.length)];
     let chordIndex = 0;
 
-    const musicLoop = new Tone.Loop((time) => {
+    musicLoop = new Tone.Loop((time) => {
         // Step to next chord in progression
         const chordName = currentProgression[chordIndex];
         const chordNotes = chordNotesMap[chordName];
@@ -436,6 +445,7 @@ function setupLoop() {
 
 // UI Handlers
 startStopBtn.addEventListener('click', async () => {
+    console.count("START/STOP clicked");
     try {
         if (typeof Tone === 'undefined') {
             startStopBtn.innerText = "Error: Tone.js not loaded";
