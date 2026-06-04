@@ -16,7 +16,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.4.2";
+const APP_VERSION = "1.4.3";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -106,7 +106,7 @@ function setupMediaSession() {
             artist: 'Infinite Lo-Fi',
             album: 'Atmospheric Lo-Fi',
             artwork: [
-                { src: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=512&h=512&auto=format&fit=crop', sizes: '512x512', type: 'image/jpeg' }
+                { src: 'https://em-content.zobj.net/source/apple/391/headphone_1f3a7.png', sizes: '512x512', type: 'image/png' }
             ]
         });
 
