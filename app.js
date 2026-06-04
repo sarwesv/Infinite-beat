@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.3.2";
+const APP_VERSION = "1.4.0";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -54,6 +54,8 @@ document.addEventListener('visibilitychange', () => {
     if (isPlaying) {
         if (document.visibilityState === 'visible') {
             requestWakeLock();
+            // Re-assert control over the audio session when the screen turns on
+            if (silentAnchor) silentAnchor.play().catch(e => {});
         }
         // Force context resume regardless of visibility to fight OS suspension
         if (Tone.context.state !== 'running') {
@@ -85,8 +87,12 @@ function initSilentAnchor() {
         silentAnchor.loop = true;
         silentAnchor.playsInline = true;
         
-        // 1-second silent MP3 (industry standard hack for iOS background persistence)
-        silentAnchor.src = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAASAAADbWFqb3JfYnJhbmQAZGFzaABUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzbzZtcDQxAFRTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//MUZAAAAAAAAAAAAAAAAAAAAAAAAMUFEWloAAAAGAAAD8P//f7gAAAAAAAAAAAAAAAD/84SAs8AAAaA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUZAs6AAAbA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OEAs8AAAaA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUZAs6AAAbA4AAdYAAAAnAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        // MediaStream Bridge: Connect Tone.js output to an <audio> element.
+        // This is the most robust way to trigger the iOS Now Playing widget
+        // and prevent the OS from suspending the audio context.
+        const dest = Tone.context.createMediaStreamDestination();
+        Tone.getDestination().connect(dest);
+        silentAnchor.srcObject = dest.stream;
         
         document.body.appendChild(silentAnchor);
     }
@@ -99,7 +105,7 @@ function setupMediaSession() {
             artist: 'Generative Band',
             album: 'Atmospheric Lo-Fi',
             artwork: [
-                { src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23020617%22/><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>', sizes: '512x512', type: 'image/svg+xml' }
+                { src: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=512&h=512&auto=format&fit=crop', sizes: '512x512', type: 'image/jpeg' }
             ]
         });
 
