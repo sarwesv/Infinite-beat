@@ -16,7 +16,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.4.4";
+const APP_VERSION = "1.4.5";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**

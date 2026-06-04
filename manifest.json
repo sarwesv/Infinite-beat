@@ -1,0 +1,17 @@
+{
+  "name": "Infinite Lo-Fi Beats",
+  "short_name": "Infinite Lo-Fi",
+  "description": "Generative lo-fi beats for focus and relaxation.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "https://em-content.zobj.net/source/apple/391/headphone_1f3a7.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
