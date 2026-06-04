@@ -5,6 +5,7 @@
 
 let isPlaying = false;
 let initialized = false;
+let isInitializing = false;
 
 // UI Elements
 const startStopBtn = document.getElementById('start-stop');
@@ -15,7 +16,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.4.2";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -441,10 +442,14 @@ startStopBtn.addEventListener('click', async () => {
             return;
         }
 
-        if (!initialized) {
+        if (!initialized && !isInitializing) {
+            isInitializing = true;
             startStopBtn.innerText = "Building...";
             await initAudio();
-            if (!initialized) return; // initAudio failed but caught its own error
+            isInitializing = false;
+            if (!initialized) return; 
+        } else if (isInitializing) {
+            return;
         }
 
         if (isPlaying) {
