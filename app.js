@@ -15,7 +15,7 @@ const body = document.body;
 
 // Constants
 const NICE_VOLUME = -11; // Increased for better speaker presence
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 console.log(`Infinite Lo-Fi Beats v${APP_VERSION} Initialized`);
 
 /**
@@ -102,7 +102,7 @@ function setupMediaSession() {
     if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
             title: 'Infinite Lo-Fi Beats',
-            artist: 'Generative Band',
+            artist: 'Infinite Lo-Fi',
             album: 'Atmospheric Lo-Fi',
             artwork: [
                 { src: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=512&h=512&auto=format&fit=crop', sizes: '512x512', type: 'image/jpeg' }
